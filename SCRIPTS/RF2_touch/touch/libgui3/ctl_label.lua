@@ -1,11 +1,11 @@
 -- Create a text label
--- args: x, y, w, h, title
+-- args: x, y, w, h, text
 
--- not yet: align_w=LEFT/CENTER/RIGHT, align_vert=TOP|CENTER|BUTTOM, title
+-- not yet: align_w=LEFT/CENTER/RIGHT, align_vert=TOP|CENTER|BUTTOM, text
 
 function label(panel, id, args, flags)
     assert(args)
-    assert(args.title)
+    assert(args.text)
         local self = {
         -- flags = bit32.bor(flags or panel.flags, VCENTER, panel.colors.primary1),
         flags = bit32.bor(flags or panel.flags, panel.colors.primary1),
@@ -20,7 +20,7 @@ function label(panel, id, args, flags)
         y = args.y,
         w = args.w or 0,
         h = args.h or 0,
-        title = args.title,
+        text = args.text,
     }
 
     function self.draw(focused)
@@ -29,7 +29,7 @@ function label(panel, id, args, flags)
         -- if focused then
         --     panel.drawFocus(x, y, w, h)
         -- end
-        -- panel.drawText(panel._.align_w(self.x, self.w, flags), self.y + self.h / 2, self.title, self.flags)
+        -- panel.drawText(panel._.align_w(self.x, self.w, flags), self.y + self.h / 2, self.text, self.flags)
 
         if self.w > 0 then
             self.flags = bit32.bor(self.flags, CENTER)
@@ -45,7 +45,7 @@ function label(panel, id, args, flags)
         panel.drawText(
             panel._.align_w(self.x, self.w, self.flags),
             panel._.align_h(self.y, self.h, self.flags),
-            self.title,
+            self.text,
             self.flags)
     end
 

@@ -19,7 +19,7 @@ local libgui_dir = ...
 -- it under the terms of the GNU General Public License version 2 as     --
 -- published by the Free Software Foundation.                            --
 --                                                                       --
--- This program is distributed in the hope that it will be useful        --
+-- This program is distributed i:n the hope that it will be useful        --
 -- but WITHOUT ANY WARRANTY; without even the implied warranty of        --
 -- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         --
 -- GNU General Public License for more details.                          --
@@ -52,9 +52,12 @@ end
 function M.log(fmt, ...)
     print(string.format("111: " .. fmt, ...))
 end
+function log(fmt, ...)
+    M.log(fmt, ...)
+end
 
 -- Load all controls
-for ctl_name in dir(libgui_dir .. "/") do
+for ctl_name in dir(libgui_dir) do
     local file_name_short = string.match(ctl_name, "^(ctl_.+).lua$")
     if file_name_short ~= nil then
         M.log("loadControl(%s)", ctl_name)
@@ -108,14 +111,32 @@ function M.newPanel(id, args)
         -- high level definitions
         txt = COLOR_THEME_PRIMARY3,
         btn = {
-            txt = COLOR_THEME_SECONDARY1,
+            txt = COLOR_THEME_PRIMARY3, -- COLOR_THEME_SECONDARY1,
             bg = COLOR_THEME_PRIMARY2,              -- button background / topbar text
             border = COLOR_THEME_SECONDARY2,
-            focused = {
+            -- focused = {
+            --     txt = COLOR_THEME_PRIMARY2,
+            --     bg = COLOR_THEME_PRIMARY2,          -- button background / topbar text
+            --     border = COLOR_THEME_SECONDARY2,
+            -- },
+            pressed = {
+                txt = COLOR_THEME_SECONDARY3,
+                bg = COLOR_THEME_SECONDARY1,
+                border = COLOR_THEME_FOCUS,
+            },
+        },
+        topbar = {
+            txt = COLOR_THEME_PRIMARY2,
+            bg = COLOR_THEME_SECONDARY1,
+        },
+        list = {
+            txt = COLOR_THEME_PRIMARY1,
+            bg = COLOR_THEME_PRIMARY2,
+            border = COLOR_THEME_SECONDARY2,
+            selected = {
                 txt = COLOR_THEME_PRIMARY2,
-                bg = COLOR_THEME_PRIMARY2,          -- button background / topbar text
-                border = COLOR_THEME_SECONDARY2,
-            }
+                bg = COLOR_THEME_FOCUS,
+            },
         },
     }
 
@@ -177,9 +198,15 @@ function M.newPanel(id, args)
     end
 
     -- Replace lcd functions to translate by gui offset
-    function panel.drawCircle(x, y, r, flags)
+    function panel.drawCircle(x, y, r, flags, thickness)
         x, y = panel.translate(x, y)
-        lcd.drawCircle(x, y, r, flags)
+        if thickness == nil then
+            lcd.drawCircle(x, y, r, flags)
+        else
+            for i = thickness, 0, -1 do
+                lcd.drawCircle(x, y, r-i, flags)
+            end
+        end
     end
 
     function panel.drawFilledCircle(x, y, r, flags)
@@ -395,6 +422,7 @@ function M.newPanel(id, args)
 
     -- Show prompt
     function panel.showPrompt(prompt)
+        -- log("ctl_number_editing  libgui3.panel.showPrompt(%s)", prompt.id)
         M.prompt = prompt
     end
 
@@ -407,6 +435,7 @@ function M.newPanel(id, args)
 
     -- Run an event cycle
     function panel.run(event, touchState)
+        log("ctl_number_editing lingui3 panel.run (%s)", panel.id)
         panel.draw(false)
         if event ~= nil then
             panel.onEvent(event, touchState)
@@ -417,6 +446,7 @@ function M.newPanel(id, args)
     -----------------------------------------------------------------------------------------------
 
     function panel.draw(focused)
+        log("ctl_number_editing lingui3 panel.draw(%s), start", panel.id)
         if panel.fullScreenRefresh then
             panel.fullScreenRefresh()
         end
@@ -429,11 +459,15 @@ function M.newPanel(id, args)
         end
         local guiFocus = not panel.parent or (focused and panel.parent.editing)
         for idx, element in ipairs(panel._.elements) do
+            log("ctl_number_editing lingui3 panel.draw (%s), %s", panel.id, idx)
+
             -- Clients may provide an update function for elements
             if element.onUpdate then
+                log("ctl_number_editing lingui3 panel.draw (%s), %s onUpdate", panel.id, idx)
                 element.onUpdate(element)
             end
             if not element.hidden then
+                log("ctl_number_editing lingui3 panel.draw (%s), %s draw (%s)", panel.id, idx, element.id)
                 element.draw(panel._.focus == idx and guiFocus)
             end
         end
@@ -446,16 +480,19 @@ function M.newPanel(id, args)
 
         if panel._.focus then
             local ctl = panel._.elements[panel._.focus]
-            -- if (panel._.elements[panel._.focus].disabled or panel._.elements[panel._.focus].editable==false or panel._.elements[panel._.focus].hidden) then
-            if (ctl.disabled or ctl.editable==false or ctl.hidden) then
-                moveFocus(1)
-                return
+            if ctl then -- do we have controls on panel?
+                if (ctl.disabled or ctl.editable==false or ctl.hidden) then
+                    moveFocus(1)
+                    return
+                end
             end
         end
         -- Is there an active prompt?
         if M.prompt and not M.showingPrompt then
             M.showingPrompt = true
+            log("lingui3 ctl_number_editing - M.prompt.run-before (%s)", M.prompt.id)
             M.prompt.run(event, touchState)
+            -- log("lingui3 ctl_number_editing - M.prompt.run-after (%s)", M.prompt.id)
             M.showingPrompt = false
             return
         end
@@ -497,12 +534,15 @@ function M.newPanel(id, args)
             end
         else
             panel._.scrolling = false
+            log("scrolling - END org_y: %s", panel._.org_y)
+            panel._.org_y = panel.y
         end
 
         -- "Pre-processing" of touch events to simplify subsequent handling and support scrolling etc.
         if event == EVT_TOUCH_FIRST then
             if panel._.focus and panel._.elements[panel._.focus].covers(touchState.x, touchState.y) then
                 panel._.scrolling = true
+                log("scrolling - START org_y: %s", panel._.org_y)
             else
                 if panel.editing then
                     return
@@ -512,11 +552,13 @@ function M.newPanel(id, args)
                         if not (element.disabled or element.hidden) and element.covers(touchState.x, touchState.y) then
                             panel._.focus = idx
                             panel._.scrolling = true
+                            log("scrolling2 - START org_y: %s", panel._.org_y)
                         end
                     end
                 end
             end
         elseif event == EVT_TOUCH_TAP or (event == EVT_TOUCH_BREAK and panel._.lastEvent == EVT_TOUCH_FIRST) then
+            log("onEvent(%s, %s)",event, touchState)
             if panel._.focus and panel._.elements[panel._.focus].covers(touchState.x, touchState.y) then
                 -- Convert TAP on focused element to ENTER
                 event = EVT_VIRTUAL_ENTER
@@ -546,17 +588,20 @@ function M.newPanel(id, args)
 
 
             -- slide up/down the main window
-            print(string.format("panel2: onEvent(%sd, %s)",event, touchState))
+            log("onEvent(%sd, %s)",event, touchState)
             if panel.enable_page_scroll and event == EVT_TOUCH_SLIDE then
                 panel._.focus = nil
                 local dY = touchState.startY - touchState.y
                 panel.y = math.min(panel._.org_y - dY, 0)
 
-                print(string.format("panel2: EVT_TOUCH_SLIDE (scrolling) %d, %d", dY, panel.y))
+                log("EVT_TOUCH_SLIDE (scrolling) %d, %d, start-y: %s, orgY: %s", dY, panel.y,touchState.startY, panel._.org_y)
             end
 
             if panel._.focus then
-                panel._.elements[panel._.focus].onEvent(event, touchState)
+                local ctl = panel._.elements[panel._.focus]
+                if ctl then
+                    panel._.elements[panel._.focus].onEvent(event, touchState)
+                end
             end
         end
     end -- onEvent(...)

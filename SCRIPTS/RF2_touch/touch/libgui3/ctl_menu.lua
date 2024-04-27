@@ -22,6 +22,7 @@ function menu(panel, id, args, flags)
         disabled = false,
         editable = true,
         hidden= false,
+        dropdown_mode = false
     }
 
     local itemCount = panel._.tableBasedX_getLength(self.items0or1)
@@ -63,16 +64,17 @@ function menu(panel, id, args, flags)
     function self.draw(focused)
         local flags = panel.getFlags(self)
         local visibleCount = math.min(visibleCount, itemCount)
-        print(string.format("4444 menu - visibleCount: %s/%s", visibleCount, itemCount))
-        print(string.format("5555: table0: %s, table1: %s", self.items1[0], self.items1[1]))
         local sel
         local bgColor
 
         if focused and panel.editing then
-            bgColor = panel.colors.edit --???
+            bgColor = panel.colors.edit
         else
             selected1 = self.selected1
-            bgColor = panel.colors.focus --???
+            bgColor = panel.colors.list.selected.bg
+        end
+        if self.dropdown_mode then
+            bgColor = panel.colors.list.selected.bg
         end
 
         for i = 0, visibleCount - 1 do
@@ -83,13 +85,13 @@ function menu(panel, id, args, flags)
             assert(self.items1[j])
             local x1 = panel._.align_w(self.x, self.w, flags)
 
+            local txt_col = panel.colors.list.txt
             if j == selected1 then
                 panel.drawFilledRectangle(self.x, y, self.w, lh, bgColor)
-                panel.drawText(x1, y + lh/2, self.items1[j], bit32.bor(panel.colors.primary2, flags, VCENTER))
-            else
-                panel.drawText(x1, y + lh/2, self.items1[j], bit32.bor(panel.colors.primary1, flags, VCENTER))
+                txt_col = panel.colors.list.selected.txt
             end
-        end
+            panel.drawText(x1+5, y + lh/2, self.items1[j], bit32.bor(txt_col, flags, VCENTER))
+    end
 
         if focused then
             panel.drawFocus(self.x, self.y, self.w, self.h)

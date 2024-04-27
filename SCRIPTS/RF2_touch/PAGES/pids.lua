@@ -18,7 +18,7 @@ labels[#labels + 1] = { t = "",               x = x, y = inc.y(tableSpacing.head
 labels[#labels + 1] = { t = "",               x = x, y = inc.y(tableSpacing.header) }
 labels[#labels + 1] = { t = "Ro", t2="Roll",  x = x, y = inc.y(tableSpacing.row) }
 labels[#labels + 1] = { t = "Pi", t2="Pitch", x = x, y = inc.y(tableSpacing.row) }
-labels[#labels + 1] = { t = "Ya", t2="yaw",   x = x, y = inc.y(tableSpacing.row) }
+labels[#labels + 1] = { t = "Ya", t2="Yaw",   x = x, y = inc.y(tableSpacing.row) }
 
 local ident_factor = (LCD_W<480) and 0.5 or 0.8
 x = x + tableSpacing.col * ident_factor
@@ -48,7 +48,7 @@ fields[#fields + 1] = {              x = x, y = inc.y(tableSpacing.row), min = 0
 x = x + colSpacing
 y = yMinLim - tableSpacing.header
 labels[#labels + 1] = { t = "F", t2="Feed",    x = x, y = inc.y(tableSpacing.header) }
-labels[#labels + 1] = { t = "",  t2="Forward", x = x, y = inc.y(tableSpacing.header) }
+labels[#labels + 1] = { t = "",  t2="Fwd",     x = x, y = inc.y(tableSpacing.header) }
 fields[#fields + 1] = {                        x = x, y = inc.y(tableSpacing.row), min = 0, max = 1000, vals = { 7,8 } }
 fields[#fields + 1] = {                        x = x, y = inc.y(tableSpacing.row), min = 0, max = 1000, vals = { 15,16 } }
 fields[#fields + 1] = {                        x = x, y = inc.y(tableSpacing.row), min = 0, max = 1000, vals = { 23,24 } }
@@ -64,7 +64,7 @@ y = y2
 labels[#labels + 1] = { t = "",               x = x, y = inc.y(tableSpacing.header) }
 labels[#labels + 1] = { t = "Ro", t2="Roll",  x = x, y = inc.y(tableSpacing.row) }
 labels[#labels + 1] = { t = "Pi", t2="Pitch", x = x, y = inc.y(tableSpacing.row) }
-labels[#labels + 1] = { t = "Ya", t2="yaw",   x = x, y = inc.y(tableSpacing.row) }
+labels[#labels + 1] = { t = "Ya", t2="Yaw",   x = x, y = inc.y(tableSpacing.row) }
 
 x = x + tableSpacing.col * ident_factor
 y = y2
@@ -75,9 +75,9 @@ fields[#fields + 1] = {                     x = x, y = inc.y(tableSpacing.row), 
 
 x = x + colSpacing
 y = y2
-labels[#labels + 1] = { t = "O",     x = x, y = inc.y(tableSpacing.header) }
-fields[#fields + 1] = {              x = x, y = inc.y(tableSpacing.row), min = 0, max = 1000, vals = { 31,32 } }
-fields[#fields + 1] = {              x = x, y = inc.y(tableSpacing.row), min = 0, max = 1000, vals = { 33,34 } }
+labels[#labels + 1] = { t = "O", t2="Offset", x = x, y = inc.y(tableSpacing.header) }
+fields[#fields + 1] = {                       x = x, y = inc.y(tableSpacing.row), min = 0, max = 1000, vals = { 31,32 } }
+fields[#fields + 1] = {                       x = x, y = inc.y(tableSpacing.row), min = 0, max = 1000, vals = { 33,34 } }
 
 
 return {

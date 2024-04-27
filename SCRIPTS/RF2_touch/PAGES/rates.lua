@@ -22,8 +22,8 @@ labels[#labels + 1] = { t = "COL",   t2="COLLECTIVE", x = x, y = inc.y(tableSpac
 local ident_factor = (LCD_W<480) and 1 or 1.7
 x = x + tableSpacing.col * ident_factor
 y = yMinLim - tableSpacing.header
-labels[#labels + 1] = { t = "RC",                   x = x, y = inc.y(tableSpacing.header) }
-labels[#labels + 1] = { t = "Rate",                 x = x, y = inc.y(tableSpacing.header) }
+labels[#labels + 1] = { t =  (LCD_W<480) and "Cntr" or "Center Rate", x = x, y = inc.y(tableSpacing.header) }
+labels[#labels + 1] = { t = (LCD_W<480) and "Sens" or "",             x = x, y = inc.y(tableSpacing.header) }
 fields[#fields + 1] = { t2 = "RC Rate Roll",        x = x, y = inc.y(tableSpacing.row), min = 0, max = 255, vals = { 2 }, scale = 100 }
 fields[#fields + 1] = { t2 = "RC Rate Pitch",       x = x, y = inc.y(tableSpacing.row), min = 0, max = 255, vals = { 8 }, scale = 100 }
 fields[#fields + 1] = { t2 = "RC Rate Yaw",         x = x, y = inc.y(tableSpacing.row), min = 0, max = 255, vals = { 14 }, scale = 100 }
@@ -31,8 +31,8 @@ fields[#fields + 1] = { t2 = "RC Rate Collective",  x = x, y = inc.y(tableSpacin
 
 x = x + tableSpacing.col
 y = yMinLim - tableSpacing.header
-labels[#labels + 1] = { t = "Super", x = x, y = inc.y(tableSpacing.header) }
-labels[#labels + 1] = { t = "Rate",  x = x, y = inc.y(tableSpacing.header) }
+labels[#labels + 1] = { t = "Max Rate", x = x, y = inc.y(tableSpacing.header) }
+labels[#labels + 1] = { t = "",  x = x, y = inc.y(tableSpacing.header) }
 fields[#fields + 1] = { t2 = "Super Rate Roll",       x = x, y = inc.y(tableSpacing.row), min = 0, max = 100, vals = { 4 }, scale = 100 }
 fields[#fields + 1] = { t2 = "Super Rate Pitch",      x = x, y = inc.y(tableSpacing.row), min = 0, max = 100, vals = { 10 }, scale = 100 }
 fields[#fields + 1] = { t2 = "Super Rate Yaw",        x = x, y = inc.y(tableSpacing.row), min = 0, max = 255, vals = { 16 }, scale = 100 }
@@ -40,8 +40,8 @@ fields[#fields + 1] = { t2 = "Super Rate Collective", x = x, y = inc.y(tableSpac
 
 x = x + tableSpacing.col
 y = yMinLim - tableSpacing.header
-labels[#labels + 1] = { t = "RC",    x = x, y = inc.y(tableSpacing.header) }
-labels[#labels + 1] = { t = "Expo",  x = x, y = inc.y(tableSpacing.header) }
+labels[#labels + 1] = { t = "Expo",    x = x, y = inc.y(tableSpacing.header) }
+labels[#labels + 1] = { t = "",  x = x, y = inc.y(tableSpacing.header) }
 fields[#fields + 1] = { t2 = "RC Expo Roll",       x = x, y = inc.y(tableSpacing.row), min = 0, max = 100, vals = { 3 }, scale = 100 }
 fields[#fields + 1] = { t2 = "RC Expo Pitch",      x = x, y = inc.y(tableSpacing.row), min = 0, max = 100, vals = { 9 }, scale = 100 }
 fields[#fields + 1] = { t2 = "RC Expo Yaw",        x = x, y = inc.y(tableSpacing.row), min = 0, max = 100, vals = { 15 }, scale = 100 }

@@ -1,11 +1,5 @@
 local PageFiles = {}
 
-
-PageFiles[#PageFiles + 1] = { title = "test1", script = "test1.lua" }
-
-
-
-
 -- Rotorflight pages.
 PageFiles[#PageFiles + 1] = { title = "Rates", script = "rates.lua" }
 PageFiles[#PageFiles + 1] = { title = "Profile - PIDs", script = "pids.lua" }

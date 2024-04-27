@@ -36,9 +36,7 @@ function horizontalSlider(panel, id, args)
 
         panel.drawFilledRectangle(x, y - 2, w, 5, colorBar)
         panel.drawFilledCircle(xdot, y, self.SLIDER_DOT_RADIUS, colorDot)
-        for i = -1, 1 do
-            panel.drawCircle(xdot, y, self.SLIDER_DOT_RADIUS + i, colorDotBorder)
-        end
+        panel.drawCircle(xdot, y, self.SLIDER_DOT_RADIUS, colorDotBorder, 2)
     end
 
     function self.onEvent(event, touchState)

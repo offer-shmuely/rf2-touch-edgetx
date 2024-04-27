@@ -17,8 +17,8 @@ function dropDown(panel, id, args, flags)
     local selected0or1 = args.selected or 1
     local callback = args.callback or panel._.doNothing
 
-    local showingMenu
-    local drawingMenu
+    local drawingMenu = false
+    local showingMenu = false
     local lh = 3 + select(2, lcd.sizeText("", flags)) -- should be sync to menu
     local menu_height = math.min(0.75 * LCD_H, #items1 * lh)
     local menu_top = (LCD_H - 10 - menu_height)
@@ -45,16 +45,23 @@ function dropDown(panel, id, args, flags)
     ctlMenu = panel.newControl.ctl_menu(menuPanel, "m1",
         {x=x, y=menu_top, w=w, h=menu_height, items=items0or1, selected=selected0or1, callback=onMenu}
         , flags)
-    --ctlMenu.editable = true
+    ctlMenu.dropdown_mode = true
 
     function menuPanel.fullScreenRefresh()
         if not menuPanel.editing then
             dismissMenu()
             return
         end
-        menuPanel.drawFilledRectangle(x, menu_top, w, menu_height, panel.colors.primary2)
-        menuPanel.drawRectangle(x - 2, menu_top - 2, w + 4, menu_height + 4, panel.colors.primary1)
-        drawingMenu = true
+
+        if menuPanel.editing then
+            -- menu background
+            menuPanel.drawFilledRectangle(x, menu_top, w, menu_height, panel.colors.list.bg)
+            menuPanel.drawRectangle(x - 2, menu_top - 2, w + 4, menu_height + 4, panel.colors.list.border)
+            drawingMenu = true
+        else
+            dismissMenu()
+            return
+        end
     end
 
     local orgMenuDraw = ctlMenu.draw
@@ -88,8 +95,8 @@ function dropDown(panel, id, args, flags)
         elseif event == EVT_VIRTUAL_ENTER then
             -- Show drop down and let it take over while active
             showingMenu = true
-            menuPanel.onEvent(event, nil)
             panel.showPrompt(menuPanel)
+            menuPanel.onEvent(event, nil)
         else
         end
     end

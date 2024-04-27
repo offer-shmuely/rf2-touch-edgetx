@@ -1,10 +1,10 @@
 -- Create a button to trigger a function
 
--- args: x,y,w,h,title, callback, isActive
+-- args: x,y,w,h,text, onPress, isActive
 function button(panel, id, args, flags)
     local self = {
-        title = args.title,
-        callback = args.callback or panel._.doNothing,
+        text = args.text,
+        callback = args.onPress or panel._.doNothing,
         flags = bit32.bor(flags or panel.flags, CENTER, VCENTER),
         disabled = false,
         editable = true,
@@ -27,7 +27,7 @@ function button(panel, id, args, flags)
 
         panel.drawFilledRectangle(x, y, w, h, self.bgColor)
         panel.drawRectangle(x, y, w, h, panel.colors.btn.border)
-        panel.drawText(x + w / 2, y + h / 2, self.title, bit32.bor(panel.colors.btn.txt, self.flags))
+        panel.drawText(x + w / 2, y + h / 2, self.text, bit32.bor(panel.colors.btn.txt, self.flags))
 
         if self.disabled then
             panel.drawFilledRectangle(x, y, w, h, GREY, 7)

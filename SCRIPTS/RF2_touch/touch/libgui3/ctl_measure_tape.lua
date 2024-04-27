@@ -53,14 +53,14 @@ function measureTape(gui, id, x, y, w, h, start_val, min, max, onChangeCallBack,
 
     function self.get_value()
         if self.scroll_offset_y == nil then
-            log("[%s] get_value() - scroll_offset_y is nil", self.id)
+            -- log("[%s] get_value() - scroll_offset_y is nil", self.id)
             return self.val
         end
         local d_val = math.floor(self.scroll_offset_y / self.dy)
         local n_val = self.val + d_val
         n_val = math.min(n_val, self.val_max)
         n_val = math.max(n_val, self.val_min)
-        log("[%s] get_value() - scroll_offset_y=%s, val=%s, d_val=%s, ==> new_val=%s", self.id, self.scroll_offset_y, self.val, d_val, n_val)
+        -- log("[%s] get_value() - scroll_offset_y=%s, val=%s, d_val=%s, ==> new_val=%s", self.id, self.scroll_offset_y, self.val, d_val, n_val)
         return n_val
     end
 

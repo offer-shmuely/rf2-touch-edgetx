@@ -19,21 +19,28 @@ function ctl_number_editing(panel, id, x, y, w, h, f, gui_fieldsInfo)
         w = w,
         h = h,
 
+        x1 = 20,
+        y1 = 45,
+        w1 = 430,
+        h1 = 210,
+
         f = f,
         gui_fieldsInfo = gui_fieldsInfo,
 
         h_header = 30,
         measureTape = nil,
         val_org = f.value,
+
+
+        editing = true,
+        drawingMenu = false,
     }
     function self.onMeasureTapeValueChange(obj) --????
-        panel.log("onMeasureTapeValueChange: %s", obj.val)
+        panel.log("ctl_number_editing onMeasureTapeValueChange: %s", obj.val)
         f.value = obj.val   --???
     end
 
-    -- self.measureTape = gui_measureTape(nil, "mt1", 360, y + self.h_header + (h - self.h_header) / 2, 70,
-    --     (h - self.h_header) / 2 - 5, f.value, f.min, f.max, onMeasureTapeValueChange) -- , callBack, flags)
-    self.measureTape = panel.newControl.ctl_measure_tape(panel, "mt1", 360, y + self.h_header + (h - self.h_header) / 2, 70,
+    self.measureTape = self.panel.newControl.ctl_measure_tape(self.panel, "mt1", 360, y + self.h_header + (h - self.h_header) / 2, 70,
         (h - self.h_header) / 2 - 5, f.value, f.min, f.max, self.onMeasureTapeValueChange) -- , callBack, flags)
 
 
@@ -46,39 +53,57 @@ function ctl_number_editing(panel, id, x, y, w, h, f, gui_fieldsInfo)
     end
 
     function self.covers(tsx, tsy)
-        panel.log("::covers() ?")
+        self.panel.log("ctl_number_editing::covers() ?")
         if (tsx >= self.x and tsx <= self.x + self.w and tsy >= self.y - self.h and tsy <= self.y + self.h) then
-            panel.log("::covers() true")
+            self.panel.log("ctl_number_editing::covers() true")
             return true
         end
 
-        panel.log("::covers() - false")
+        self.panel.log("ctl_number_editing::covers() - false")
         return false
     end
 
     function self.onEvent(event, touchState)
-        self.measureTape.onEvent(event, touchState)
+        -- self.measureTape.onEvent(event, touchState)
+    end
+
+    function self.fullScreenRefresh()
+        local x1,y1,w1,h1 = self.x1, self.y1, self.w1,self.h1
+        self.panel.log("ctl_number_editing.fullScreenRefresh() - editing: %d", self.editing)
+        -- if not menuPanel.editing then
+            --     dismissMenu()
+            --     return
+            -- end
+
+        if self.editing then
+            -- menu background
+            self.panel.log("ctl_number_editing.fullScreenRefresh() EDITING")
+            self.panel.drawFilledRectangle(x1, y1, w1, h1, panel.colors.list.bg)
+            self.panel.drawRectangle(x1-2, y1-2, w1+4, h1+4, panel.colors.list.border)
+            self.drawingMenu = true
+        else
+            dismissMenu()
+            return
+        end
     end
 
     function self.draw(focused)
-        local x1 = 20
-        local y1 = 45
-        local w1 = 430
-        local h1 = 210
+        panel.log("ctl_number_editing::draw")
+        local x1,y1,w1,h1 = self.x1, self.y1, self.w1,self.h1
 
         local f_val = self.measureTape.val or 77
         local field_name = f.t2 or f.t
 
-        panel.drawFilledRectangle(0, 30, LCD_W, LCD_H - self.h_header, LIGHTGREY, 6) -- obfuscate main page
-        panel.drawFilledRectangle(x1, y1, w1, h1, GREY, 2) -- edit window bkg
-        panel.drawFilledRectangle(x1, y1, w1, self.h_header, BLACK, 2) -- header
-        panel.drawRectangle(x1 + 5, y1 + 2, 10, 10, WHITE, 0) -- x
-        panel.drawText(x1 + w1 - 20, y1 + 5, "x", panel.FONT_SIZES.FONT_8 + BOLD + WHITE)
-        panel.drawRectangle(x1, y1, w1, h1, GREY, 0) -- border
+        self.panel.drawFilledRectangle(0, 30, LCD_W, LCD_H - self.h_header, LIGHTGREY, 6) -- obfuscate main page
+        self.panel.drawFilledRectangle(x1, y1, w1, h1, GREY, 2) -- edit window bkg
+        self.panel.drawFilledRectangle(x1, y1, w1, self.h_header, BLACK, 2) -- header
+        self.panel.drawRectangle(x1 + 5, y1 + 2, 10, 10, WHITE, 0) -- x
+        self.panel.drawText(x1 + w1 - 20, y1 + 5, "x", panel.FONT_SIZES.FONT_8 + BOLD + WHITE)
+        self.panel.drawRectangle(x1, y1, w1, h1, GREY, 0) -- border
         -- lcd.drawText(x1 + 5, y1 + h_header, field_name, FONT_SIZES.FONT_12 + BOLD + CUSTOM_COLOR)
 
         -- title
-        panel.drawText((x1 + w1) / 2, y1 + 5, field_name, panel.FONT_SIZES.FONT_8 + BOLD + WHITE + CENTER)
+        self.panel.drawText((x1 + w1) / 2, y1 + 5, field_name, panel.FONT_SIZES.FONT_8 + BOLD + WHITE + CENTER)
 
         local fHelp = "Info: $$"
         local units = ""
@@ -92,16 +117,16 @@ function ctl_number_editing(panel, id, x, y, w, h, f, gui_fieldsInfo)
         -- lcd.drawText(x1 + w1 - 5, y1 + h_header + 2, string.format("max: \n%s", f.min), FONT_SIZES.FONT_8 + BLACK + RIGHT)
         -- lcd.drawText(x1 + w1 - 5, y1 + h1 - 45, string.format("max: \n%s", f.max), FONT_SIZES.FONT_8 + BLACK + RIGHT)
         -- lcd.drawText(x1 + 20, y1 + h_header + 20, string.format("%s", f.t2 or f.t), FONT_SIZES.FONT_8 + WHITE)
-        panel.drawText(x1 + 20, y1 + self.h_header + 30, string.format("max: %s", f.min), panel.FONT_SIZES.FONT_8 + WHITE)
-        panel.drawText(x1 + 20, y1 + self.h_header + 50, string.format("max: %s", f.max), panel.FONT_SIZES.FONT_8 + WHITE)
+        self.panel.drawText(x1 + 20, y1 + self.h_header + 30, string.format("max: %s", f.min), panel.FONT_SIZES.FONT_8 + WHITE)
+        self.panel.drawText(x1 + 20, y1 + self.h_header + 50, string.format("max: %s", f.max), panel.FONT_SIZES.FONT_8 + WHITE)
         if fHelp ~= nil then
-            panel.drawText(x1 + 20, y1 + self.h_header + 85, "Info: \n" .. fHelp, panel.FONT_SIZES.FONT_8 + WHITE)
+            self.panel.drawText(x1 + 20, y1 + self.h_header + 85, "Info: \n" .. fHelp, panel.FONT_SIZES.FONT_8 + WHITE)
         end
 
         -- value
         lcd.drawText((x1 + w1) / 2 + 80, y1 + 30, f_val, panel.FONT_SIZES.FONT_16 + BOLD + BLUE + RIGHT)
         if units ~= nil then
-            panel.drawText((x1 + w1) / 2 + 85, y1 + 60, units, panel.FONT_SIZES.FONT_12 + BOLD + BLUE)
+            self.panel.drawText((x1 + w1) / 2 + 85, y1 + 60, units, panel.FONT_SIZES.FONT_12 + BOLD + BLUE)
         end
 
         if self.val_org ~= f_val then
@@ -122,11 +147,11 @@ function ctl_number_editing(panel, id, x, y, w, h, f, gui_fieldsInfo)
         local r = 8
         local px = (w - 2) * percent
 
-        panel.drawFilledRectangle(x, y + 2, w, h, LIGHTGREY)
-        panel.drawFilledCircle(x + px - r / 2, y + r / 2, r, lcd.RGB(0x00, 0xB0, 0xDC))
-        panel.drawFilledCircle(x + px - r / 2, y + r / 2, r, BLUE)
+        self.panel.drawFilledRectangle(x, y + 2, w, h, LIGHTGREY)
+        self.panel.drawFilledCircle(x + px - r / 2, y + r / 2, r, lcd.RGB(0x00, 0xB0, 0xDC))
+        self.panel.drawFilledCircle(x + px - r / 2, y + r / 2, r, BLUE)
 
-        self.measureTape.draw()
+        -- self.measureTape.draw()
     end
 
     return self
