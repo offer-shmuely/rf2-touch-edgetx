@@ -14,7 +14,7 @@ function M.buildSpecialFields(libGUI, panel,Page,  y, runningInSimulator)
 
     -- col headers
     local txt
-    libGUI.newControl.ctl_title(panel, nil, {x=0,y=y, w=col1_w, h=30, text1_x=5, bg_color=GREY, text1="Rates"})
+    libGUI.newControl.ctl_title(panel, nil, {x=0,y=y, w=col1_w, h=30, text1_x=5, bg_color=GREY, text1=" "})
     libGUI.newControl.ctl_title(panel, nil, {x=col1_w+1+0*(col_w2), y=y, w=col_w, h=30, text1_x="CENTER", bg_color=GREY, text1=Page.labels[7].t  .." ".. Page.labels[8].t})
     libGUI.newControl.ctl_title(panel, nil, {x=col1_w+1+1*(col_w2), y=y, w=col_w, h=30, text1_x="CENTER", bg_color=GREY, text1=Page.labels[9].t  .." ".. Page.labels[10].t})
     libGUI.newControl.ctl_title(panel, nil, {x=col1_w+1+2*(col_w2), y=y, w=col_w, h=30, text1_x="CENTER", bg_color=GREY, text1=Page.labels[11].t .." ".. Page.labels[12].t})
@@ -35,37 +35,19 @@ function M.buildSpecialFields(libGUI, panel,Page,  y, runningInSimulator)
             local i = (col-1)*4 + row
             local f = Page.fields[i]
             if runningInSimulator and f.label == nil then
-                f.max = 360*2
-                f.min = 10
                 f.value = defaults[i]
             end
 
-            libGUI.newControl.ctl_number_as_button(panel, nil,
-                {x=x+1, y=y+1, w=col_w-2, h=row_h-2, text=nil, units="",
-                    f={value=f.value, min=f.min, max=f.max},
-                    -- onChangeValue=function(delta_val, ctl)
-                    --     panel.log("onChangeValue: %s - %s", delta_val, ctl)
-                    --     panel.log("onChangeValue1: f.value: %s", f.value)
-                    --     f.value = f.value + delta_val
-                    --     panel.log("onChangeValue2: f.value: %s", f.value)
-                    --     return f.value
-                    -- end
-                }
-                -- CENTER
-            )
-            -- libGUI.newControl.ctl_number(panel, nil,
-            --     {x=x+1, y=y+1, w=col_w-2, h=row_h-2, value=f.value, min=f.min, max=f.max,
-            --         bg_color=panel.colors.btn.bg,
-            --         onChangeValue=function(delta_val, ctl)
-            --             panel.log("onChangeValue: %s - %s", delta_val, ctl)
-            --             panel.log("onChangeValue1: f.value: %s", f.value)
-            --             f.value = f.value + delta_val
-            --             panel.log("onChangeValue2: f.value: %s", f.value)
-            --             return f.value
-            --         end
-            --     },
-            --     CENTER
-            -- )
+            libGUI.newControl.ctl_number_as_button(panel,  "rates-"..col.."-"..row, {
+                x=x+1, y=y+1, w=col_w-2, h=row_h-2,
+                steps=f.mult,
+                value=f.value,
+                min=f.min /  (f.scale or 1),
+                max=f.max /  (f.scale or 1),
+                scale=(f.scale or 1),
+                units="",
+                text=nil, help=nil,
+            })
         end
     end
 

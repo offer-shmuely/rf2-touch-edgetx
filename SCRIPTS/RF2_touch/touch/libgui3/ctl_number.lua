@@ -1,15 +1,12 @@
 -- Create a number that can be edited
 -- args: x, y, w, h, value, onChangeValue, flags, min, max
 function number(panel, id, args, flags)
--- function number(panel, id, x, y, w, h, value, onChangeValue, flags, min, max)
+    panel.log("button.new(%s)", id)
     local self = {
-        onChangeValue = args.onChangeValue or panel._.onChangeDefault,
         flags = bit32.bor(flags or panel.flags, VCENTER),
         disabled = false,
         editable = true,
         hidden= false,
-        min_val = args.min or 0,
-        max_val = args.max or 100,
 
         panel = panel,
         id = id,
@@ -17,14 +14,24 @@ function number(panel, id, args, flags)
         y = args.y,
         w = args.w,
         h = args.h,
+        min_val = args.min or 0,
+        max_val = args.max or 100,
         value = args.value or -1,
+        units = args.units,
         bg_color = args.bg_color,
+        onChangeValue = args.onChangeValue or panel._.onChangeDefault,
+        callbackOnModalActive = args.callbackOnModalActive or panel._.doNothing,
+        callbackOnModalInactive = args.callbackOnModalInactive or panel._.doNothing,
+
+        modalPanel = nil,
+        ctlNumberEditing = nil,
+        showingEditor = false,
     }
 
     local d0
 
     function self.draw(focused)
-        local x,y,w,h = self.x, self.y, self.w, self.h
+        local x,y,w,h = self.x,self.y,self.w,self.h
         local flags = panel.getFlags(self)
         local fg = panel.colors.primary1
 
@@ -50,10 +57,9 @@ function number(panel, id, args, flags)
             panel.drawFilledRectangle(x + 5, y+h-2-5, px, 5, BLUE)
         end
 
-
     end
 
-    function self.onEvent(event, touchState)
+    function self.onEventSimpleInPlace(event, touchState)
         if panel.editing then
             if event == EVT_VIRTUAL_ENTER then
                 panel.editing = false
@@ -83,6 +89,47 @@ function number(panel, id, args, flags)
         end
     end
 
+    function self.onEvent(event, touchState)
+        -- panel.log("[%s] fancy  self.onEvent(%s)", self.id, self.text)
+        if self.showingEditor == false then
+            if event == EVT_VIRTUAL_ENTER then
+                killEvents(event)   -- X10/T16 issue: pageUp is a long press
+                self.modalPanel = panel.newPanel("modal-fancy-editor")
+                self.ctlNumberEditing = self.modalPanel.newControl.ctl_number_editor(self.modalPanel, "numEditor1", {
+                    x=20, y=45, w=430, h=210,
+                    value=self.value,min=self.min,max=self.max,
+                    text=self.text,
+                    help=self.help,
+                        onCancel=function()
+                            panel.log("[%s] number_as_button::onCancelCallback(%s)", self.id, self.value)
+                            self.showingEditor = false
+                            self.ctlNumberEditing = nil
+                            panel.dismissPrompt()
+                            self.modalPanel = nil
+                            self.callbackOnModalInactive(self)
+                        end,
+                        onDone=function(newVal)
+                            panel.log("[%s] number_as_button::onDoneCallback(%s)", self.id, self.value)
+                            self.value = newVal
+                            self.showingEditor = false
+                            self.ctlNumberEditing = nil
+                            panel.dismissPrompt()
+                            self.modalPanel = nil
+                            self.callbackOnModalInactive(self)
+                        end,
+
+                })
+                self.showingEditor = true
+                panel.showPrompt(self.modalPanel) --???
+
+                self.callbackOnModalActive(self)
+                return
+            end
+        else
+            self.modalPanel.onEvent(event, touchState)
+        end
+    end
+
     if panel~=nil then
         panel.addCustomElement(self)
     end
@@ -90,5 +137,5 @@ function number(panel, id, args, flags)
     return self
 end
 
-
 return number
+

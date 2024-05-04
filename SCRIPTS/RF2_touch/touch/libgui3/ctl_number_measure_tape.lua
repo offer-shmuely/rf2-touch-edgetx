@@ -23,9 +23,9 @@ end
 
 -----------------------------------------------------------------------------------------------
 -- Create a button to trigger a function
-function measureTape(gui, id, x, y, w, h, start_val, min, max, onChangeCallBack, flags)
+-- args: x, y, w, h, start_val, min, max, onChangeCallBack
+function measureTape(gui, id, args, flags)
     local self = {
-        callBack = onChangeCallBack or doNothing,
         -- flags = bit32.bor(flags or gui.flags, CENTER, VCENTER),
         flags = bit32.bor(flags or default_flags, CENTER, VCENTER),
         disabled = false,
@@ -34,20 +34,22 @@ function measureTape(gui, id, x, y, w, h, start_val, min, max, onChangeCallBack,
 
         gui = gui,
         id = id,
-        x = x,
-        y = y,
-        w = w,
-        h = h,
+        x = args.x,
+        y = args.y,
+        w = args.w,
+        h = args.h,
+        val_min = args.min,
+        val_max = args.max,
+        callBack = args.onChangeCallBack or doNothing,
 
         dy = 6,
         num_vals = nil,
-        val_min = min,
-        val_max = max,
 
         scrolling = false,
         scroll_offset_y = nil,
         scrolling_base_y = nil,
-        val = start_val,
+        val = args.start_val,
+        val_on_start_sliding = nil,
         lastValReported = nil,
     }
 
@@ -57,11 +59,20 @@ function measureTape(gui, id, x, y, w, h, start_val, min, max, onChangeCallBack,
             return self.val
         end
         local d_val = math.floor(self.scroll_offset_y / self.dy)
-        local n_val = self.val + d_val
+        -- local n_val = self.val + d_val
+        local n_val = self.val_on_start_sliding + d_val
         n_val = math.min(n_val, self.val_max)
         n_val = math.max(n_val, self.val_min)
         -- log("[%s] get_value() - scroll_offset_y=%s, val=%s, d_val=%s, ==> new_val=%s", self.id, self.scroll_offset_y, self.val, d_val, n_val)
         return n_val
+    end
+
+    function self.inc_value(step)
+        local n_val = self.val + step
+        n_val = math.min(n_val, self.val_max)
+        n_val = math.max(n_val, self.val_min)
+        self.val = n_val
+        return
     end
 
     function self.set_value(v)
@@ -83,49 +94,6 @@ function measureTape(gui, id, x, y, w, h, start_val, min, max, onChangeCallBack,
         log("::covers() - false")
         return false
     end
-
-    function self.onEvent(event, touchState)
-
-        -- "Pre-processing" of touch events to simplify subsequent handling and support scrolling etc.
-        if event == EVT_TOUCH_FIRST and self.covers(touchState.x, touchState.y) then
-            lcd.drawFilledCircle(touchState.x, touchState.y, 10, GREY, 10)
-            if self.scrolling == false then
-                self.scrolling = true
-                self.scrolling_base_y = touchState.y
-                self.scroll_offset_y = 0 -- self.scrolling_base_y - touchState.y
-                log("[%s] scrolling EVT_TOUCH_FIRST, val=%s, d_val=%s, new_val=%s", self.id, self.val, d_val, self.get_value())
-                log("start scrolling y=%s", self.scrolling_base_y)
-            end
-
-            -- If we put a finger down on a menu item and immediately slide, then we can scroll
-        elseif event == EVT_TOUCH_SLIDE and self.covers(touchState.x, touchState.y) then
-            -- lcd.drawFilledCircle(touchState.x, touchState.y, 10, GREEN, 10)
-            if self.scrolling then
-                self.scroll_offset_y = self.scrolling_base_y - touchState.y
-                log("[%s] scrolling y1=%s, y2=%s, dy=%s", self.id, self.scrolling_base_y, touchState.y, self.dy)
-            end
-
-        elseif event == EVT_TOUCH_BREAK and self.covers(touchState.x, touchState.y) then
-            self.scroll_offset_y = self.scrolling_base_y - touchState.y
-            -- log("[%s] scrolling EVT_TOUCH_BREAK, y1=%s, y2=%s, dy=%s", self.id, self.scrolling_base_y, touchState.y,self.dy)
-            log("[%s] scrolling EVT_TOUCH_BREAK, val=%s, new_val=%s", self.id, self.val, self.get_value())
-            self.val = self.get_value()
-            self.scrolling = false
-            self.scrolling_base_y = nil
-            self.scroll_offset_y = nil
-            log("[%s] scrolling EVT_TOUCH_BREAK, val=%s", self.id, self.val)
-        else
-            self.scrolling = false
-        end
-
-        local v = self.get_value()
-        if v ~= self.lastValReported then
-            self.lastValReported = v
-            return self.callBack(self)
-        end
-
-    end
-
 
     function self.draw(focused)
         local x,y,w,h = self.x, self.y, self.w,self.h
@@ -186,6 +154,52 @@ function measureTape(gui, id, x, y, w, h, start_val, min, max, onChangeCallBack,
             gui.drawFilledRectangle(x, y, w, h, GREY, 7)
         end
     end
+
+    function self.onEvent(event, touchState)
+
+        -- "Pre-processing" of touch events to simplify subsequent handling and support scrolling etc.
+        if event == EVT_TOUCH_FIRST and self.covers(touchState.x, touchState.y) then
+            lcd.drawFilledCircle(touchState.x, touchState.y, 10, GREY, 10)
+            if self.scrolling == false then
+                self.scrolling = true
+                self.scrolling_base_y = touchState.y
+                self.scroll_offset_y = 0 -- self.scrolling_base_y - touchState.y
+                self.val_on_start_sliding = self.val
+                log("[%s] scrolling EVT_TOUCH_FIRST, val=%s, new_val=%s", self.id, self.val, self.get_value())
+                log("start scrolling y=%s", self.scrolling_base_y)
+            end
+
+            -- If we put a finger down on a menu item and immediately slide, then we can scroll
+        elseif event == EVT_TOUCH_SLIDE and self.covers(touchState.x, touchState.y) then
+            -- lcd.drawFilledCircle(touchState.x, touchState.y, 10, GREEN, 10)
+            if self.scrolling then
+                self.scroll_offset_y = self.scrolling_base_y - touchState.y
+                log("[%s] scrolling y1=%s, y2=%s, dy=%s", self.id, self.scrolling_base_y, touchState.y, self.dy)
+                self.val = self.get_value()
+            end
+
+        elseif event == EVT_TOUCH_BREAK and self.covers(touchState.x, touchState.y) then
+            if self.scrolling_base_y then
+                self.scroll_offset_y = self.scrolling_base_y - touchState.y
+            end
+            log("[%s] scrolling EVT_TOUCH_BREAK, val=%s, new_val=%s", self.id, self.val, self.get_value())
+            self.val = self.get_value()
+            self.scrolling = false
+            self.scrolling_base_y = nil
+            self.scroll_offset_y = nil
+            log("[%s] scrolling EVT_TOUCH_BREAK, val=%s", self.id, self.val)
+        else
+            self.scrolling = false
+        end
+
+        local v = self.get_value()
+        if v ~= self.lastValReported then
+            self.lastValReported = v
+            return self.callBack(self)
+        end
+
+    end
+
 
     if gui~=nil then
         gui.addCustomElement(self)

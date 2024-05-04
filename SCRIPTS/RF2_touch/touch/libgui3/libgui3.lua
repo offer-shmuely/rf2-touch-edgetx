@@ -19,7 +19,7 @@ local libgui_dir = ...
 -- it under the terms of the GNU General Public License version 2 as     --
 -- published by the Free Software Foundation.                            --
 --                                                                       --
--- This program is distributed i:n the hope that it will be useful        --
+-- This program is distributed in the hope that it will be useful        --
 -- but WITHOUT ANY WARRANTY; without even the implied warranty of        --
 -- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         --
 -- GNU General Public License for more details.                          --
@@ -44,6 +44,8 @@ print(string.format("libgui_dir: %s, app_ver: %s", libgui_dir, app_ver))
 local M = { }
 M.libgui_dir = libgui_dir
 M.newControl = {}
+M.prompt = nil
+M.showingPrompt = false
 
 function M.getVer()
     return app_ver
@@ -56,6 +58,12 @@ function log(fmt, ...)
     M.log(fmt, ...)
 end
 
+function M.isPrompt()
+    return M.prompt ~= nil
+end
+function M.isNoPrompt()
+    return M.prompt == nil
+end
 -- Load all controls
 for ctl_name in dir(libgui_dir) do
     local file_name_short = string.match(ctl_name, "^(ctl_.+).lua$")
@@ -111,12 +119,12 @@ function M.newPanel(id, args)
         -- high level definitions
         txt = COLOR_THEME_PRIMARY3,
         btn = {
-            txt = COLOR_THEME_PRIMARY3, -- COLOR_THEME_SECONDARY1,
-            bg = COLOR_THEME_PRIMARY2,              -- button background / topbar text
+            txt = COLOR_THEME_PRIMARY3,      -- COLOR_THEME_SECONDARY1,
+            bg = COLOR_THEME_PRIMARY2,       -- button background / topbar text
             border = COLOR_THEME_SECONDARY2,
             -- focused = {
             --     txt = COLOR_THEME_PRIMARY2,
-            --     bg = COLOR_THEME_PRIMARY2,          -- button background / topbar text
+            --     bg = COLOR_THEME_PRIMARY2, -- button background / topbar text
             --     border = COLOR_THEME_SECONDARY2,
             -- },
             pressed = {
@@ -244,6 +252,11 @@ function M.newPanel(id, args)
         lcd.drawFilledTriangle(x1, y1, x2, y2, x3, y3, flags)
     end
 
+    function panel.drawBitmap(img, x, y, scale)
+        x, y = panel.translate(x, y)
+        lcd.drawBitmap(img, x, y, scale)
+    end
+
     function panel.drawText(x, y, text, flags, inversColor)
         x, y = panel.translate(x, y)
         -- local is_center_horz = bit32.btest(flags, CENTER)
@@ -298,13 +311,19 @@ function M.newPanel(id, args)
         end
         return tbl1, is_0_based
     end
-
     function panel._.tableBasedX_convertSelectedTo1Based(selected, tbl)
         local is_0_based = (tbl[0]~=nil)
         if is_0_based == false then
             return selected
         end
         return selected + 1
+    end
+    function panel._.tableBasedX_convertSelectedTo0or1Based(selected, tbl)
+        local is_0_based = (tbl[0]~=nil)
+        if is_0_based == false then
+            return selected
+        end
+        return selected-1
     end
 
     function panel._.tableBasedX_getValue(i, orgTable)
@@ -422,7 +441,6 @@ function M.newPanel(id, args)
 
     -- Show prompt
     function panel.showPrompt(prompt)
-        -- log("ctl_number_editing  libgui3.panel.showPrompt(%s)", prompt.id)
         M.prompt = prompt
     end
 
@@ -435,7 +453,6 @@ function M.newPanel(id, args)
 
     -- Run an event cycle
     function panel.run(event, touchState)
-        log("ctl_number_editing lingui3 panel.run (%s)", panel.id)
         panel.draw(false)
         if event ~= nil then
             panel.onEvent(event, touchState)
@@ -446,7 +463,6 @@ function M.newPanel(id, args)
     -----------------------------------------------------------------------------------------------
 
     function panel.draw(focused)
-        log("ctl_number_editing lingui3 panel.draw(%s), start", panel.id)
         if panel.fullScreenRefresh then
             panel.fullScreenRefresh()
         end
@@ -459,15 +475,11 @@ function M.newPanel(id, args)
         end
         local guiFocus = not panel.parent or (focused and panel.parent.editing)
         for idx, element in ipairs(panel._.elements) do
-            log("ctl_number_editing lingui3 panel.draw (%s), %s", panel.id, idx)
-
             -- Clients may provide an update function for elements
             if element.onUpdate then
-                log("ctl_number_editing lingui3 panel.draw (%s), %s onUpdate", panel.id, idx)
                 element.onUpdate(element)
             end
             if not element.hidden then
-                log("ctl_number_editing lingui3 panel.draw (%s), %s draw (%s)", panel.id, idx, element.id)
                 element.draw(panel._.focus == idx and guiFocus)
             end
         end
@@ -477,6 +489,15 @@ function M.newPanel(id, args)
 
     function panel.onEvent(event, touchState)
         -- Make sure that focused element is active
+        -- log("[%s] libgui3 panel.onEvent() focus: %s", panel.id, panel._.focus)
+        -- panel.log("[%s] addElement(%s, %s-->%s)", panel.id, element.id, oldNumOfElements, #panel._.elements)
+
+        -- local t4 = ""
+        -- for idx, element in ipairs(panel._.elements) do
+        --     t4 = t4..string.format("(%s, %s) ", idx, element.id)
+        -- end
+        -- log("[%s] fancy addElement controls A7: %s", panel.id, t4)
+
 
         if panel._.focus then
             local ctl = panel._.elements[panel._.focus]
@@ -487,17 +508,28 @@ function M.newPanel(id, args)
                 end
             end
         end
+
         -- Is there an active prompt?
         if M.prompt and not M.showingPrompt then
             M.showingPrompt = true
-            log("lingui3 ctl_number_editing - M.prompt.run-before (%s)", M.prompt.id)
             M.prompt.run(event, touchState)
-            -- log("lingui3 ctl_number_editing - M.prompt.run-after (%s)", M.prompt.id)
             M.showingPrompt = false
             return
         end
 
         if event == 0 then
+            return
+        end
+
+        -- Is there an active prompt, send onEvent to the main control of the modal panel
+        log("[%s] libgui3 - onEvent --> prompt::onEvent 1 (%s, %s)", panel.id, M.prompt, M.showingPrompt)
+        if M.prompt and M.showingPrompt and touchState==nil then
+            log("[%s] libgui3 - onEvent --> prompt::onEvent (prompt.id: %s)2", panel.id, M.prompt.id)
+            local ctl = panel._.elements[panel._.focus]
+            -- if ctl then
+                log("[%s] libgui3 panel.onEvent() ctl:%s, focus: %s <<<<<", panel.id, ctl.id, panel._.focus)
+                ctl.onEvent(event, touchState)
+            -- end
             return
         end
 
@@ -600,7 +632,8 @@ function M.newPanel(id, args)
             if panel._.focus then
                 local ctl = panel._.elements[panel._.focus]
                 if ctl then
-                    panel._.elements[panel._.focus].onEvent(event, touchState)
+                    log("[%s] libgui3 panel.onEvent() ctl:%s, focus: %s <<<<<", panel.id, ctl.id, panel._.focus)
+                    ctl.onEvent(event, touchState)
                 end
             end
         end

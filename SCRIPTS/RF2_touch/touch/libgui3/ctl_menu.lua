@@ -15,7 +15,9 @@ function menu(panel, id, args, flags)
         items0or1 = args.items or { "No items!" }, -- can be 0 based table, or 1 based table
         items1 = panel._.tableBasedX_convertTableTo1Based(args.items), -- 1 based table
         selected0or1 = args.selected or 1,
+        initiatedselected0or1 = args.selected or 1,
         selected1 = panel._.tableBasedX_convertSelectedTo1Based(args.selected or 1, args.items),
+        initiatedSelected1 = panel._.tableBasedX_convertSelectedTo1Based(args.selected or 1, args.items),
         callback = args.callback or panel._.doNothing,
         flags = bit32.bor(flags or panel.flags),
 
@@ -35,6 +37,9 @@ function menu(panel, id, args, flags)
     local killEvt
     panel.log("111 self.selected1:%s self.selected0or1:%s", selected1, self.selected0or1)
 
+    function self.isDirty()
+        return selected1 ~= self.initiatedSelected1
+    end
 
     local function setFirstVisible(v)
         firstVisible = v
@@ -91,7 +96,7 @@ function menu(panel, id, args, flags)
                 txt_col = panel.colors.list.selected.txt
             end
             panel.drawText(x1+5, y + lh/2, self.items1[j], bit32.bor(txt_col, flags, VCENTER))
-    end
+        end
 
         if focused then
             panel.drawFocus(self.x, self.y, self.w, self.h)

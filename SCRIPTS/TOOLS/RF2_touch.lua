@@ -25,7 +25,7 @@ local function select_ui()
      --    return "ui_color.lua"
      --end
 
-    -- assert(false, "RF2 need EdgeTx with color screen")
+    assert(false, "RF2 need EdgeTx with color screen")
     return "ui.lua"
 end
 

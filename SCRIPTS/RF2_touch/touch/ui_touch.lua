@@ -4,6 +4,7 @@ local app_name = "RF2_touch"
 
 local uiStatus =
 {
+    splash   = 0,
     init     = 1,
     mainMenu = 2,
     pages    = 3,
@@ -23,7 +24,7 @@ local uiMsp =
     eepromWrite = 250,
 }
 
-local uiState = uiStatus.init
+local uiState = uiStatus.splash
 local prevUiState
 local pageState = pageStatus.display
 local requestTimeout = 80
@@ -35,13 +36,10 @@ local saveTimeout = protocol.saveTimeout
 local saveRetries = 0
 local saveMaxRetries = protocol.saveMaxRetries
 local popupMenuActive = 1
-local is_popupmenu_active = false
-local is_modal_number_editor_active = false
 local killEnterBreak = 0
 local pageScrollY = 0
 local mainMenuScrollY = 0
 local PageFiles, Page, init
--- local popupMenu
 
 local backgroundFill = TEXT_BGCOLOR or ERASE
 local foregroundColor = LINE_COLOR or SOLID
@@ -56,17 +54,45 @@ local function log(fmt, ...)
 end
 
 local libgui_dir = "/SCRIPTS/" .. app_name .. "/touch/libgui3"
-local libGUI = assert(loadScript("touch/libgui3/libgui.lua", "tcd"))(libgui_dir)
+local libGUI = assert(loadScript("touch/libgui3/libgui3.lua", "tcd"))(libgui_dir)
 local ctl_fieldsInfo = assert(loadScript("touch/fields_info.lua", "tcd"))()
+local img_bg1 = nil
+local splash_start_time = 0
+local btnReload
+local btnSave
+local isFiledsNeedToSave = false
+
 
 -- Instantiate main menu GUI panel
 local panelTopBar = libGUI.newPanel("panelTopBar")
--- local panelInitPage = libGUI.newPanel("panelInitPage", {x=0, y=0})
-local panelPopupMenu = libGUI.newPanel("panelPopupMenu", {x=0, y=0})
-local panelMainMenu = libGUI.newPanel("mainMenu", {enable_page_scroll=false})
+local panelMainMenu = libGUI.newPanel("mainMenu", {enable_page_scroll=true})
 local panelFieldsPage = nil
+local modalWatingPanel = nil
+local modalWatingCtl = nil
 
 -- -------------------------------------------------------------------
+local modalWatingParams = nil
+
+local function modalWatingStart(text, timeout, retryCount, callbackRetry, callbackGaveup)
+    log("modalWating: modalWatingStart(%s)", text)
+
+    local panel = libGUI.newPanel("modalWating")
+    modalWatingCtl = panel.newControl.ctl_waiting_dialog(panel, nil, {
+        text = text,
+        textOrg = text,
+        timeout = timeout,
+        retryCount = retryCount,
+        retries = 0,
+        callbackRetry = callbackRetry,
+        callbackGaveup = callbackGaveup,
+        panel = nil,
+    })
+
+    modalWatingPanel = panel
+    panel.showPrompt(modalWatingPanel)
+
+end
+
 local function saveSettings()
     if Page.values then
         local payload = Page.values
@@ -86,15 +112,16 @@ end
 
 local function invalidatePages()
     Page = nil
+    panelFieldsPage = nil
     pageState = pageStatus.display
     saveTS = 0
+    isFiledsNeedToSave = false
     collectgarbage()
 end
 
 local function rebootFc()
     protocol.mspRead(uiMsp.reboot)
     invalidatePages()
-    is_popupmenu_active = false
 end
 
 local function eepromWrite()
@@ -157,13 +184,13 @@ local function simFillValues()
                 val = math.floor((f.max + f.min) / (f.scale or 1) * 0.2)
             end
             f.value = val
-            -- f.value = f.value/(f.scale or 1)
         end
     end
 end
 
 local function processMspReply(cmd,rx_buf,err)
     if not Page or not rx_buf then
+        --
     elseif cmd == Page.write then
         if Page.eepromWrite then
             eepromWrite()
@@ -225,45 +252,17 @@ local function change_state_to_pages()
 end
 
 
-local function buildPopupMenu()
-    local x1=20
-    local y1=40
-    local w1=LCD_W - 2*x1
-    local h1=LCD_H - y1 - 10
-    local btn_h =60
-    local btn_w =140
-    -- local h1=btn_h+20
-    local h_header=30
-
-    local panel = panelPopupMenu
-
-    libGUI.newControl.ctl_title(panel, nil, {x=x1, y=y1, w=w1, h=h1, bg_color=GERY})
-    libGUI.newControl.ctl_title(panel, nil, {x=x1, y=y1, w=w1, h=h_header, text1="Menu1", text1_x=10, bg_color=BLACK})
-
-    libGUI.newControl.ctl_button(panel, nil, {x=300, y=80, w=btn_w, h=btn_h, text = "Reboot", onPress=rebootFc})
-    libGUI.newControl.ctl_button(panel, nil, {x=300, y=160, w=btn_w, h=btn_h, text = "Acc cal",
-        onPress = function()
-            confirm("CONFIRM/acc_cal.lua")
-        end
-    })
-
-    if uiState == uiStatus.pages then
-        libGUI.newControl.ctl_button(panel, nil, {x=100, y=80, w = btn_w, h=btn_h, text = "Save page", onPress=saveSettings})
-        libGUI.newControl.ctl_button(panel, nil, {x=100, y=160, w = btn_w, h=btn_h, text = "Reload", onPress=invalidatePages})
-    end
-
-end
-
 -- draw menu (pages)
 local function buildMainMenu()
     local yMinLim = radio.yMinLimit
 
     local h = 50
-    local w = 147
+    -- local w = 147
+    local w = 225
     local lineSpacing_w = 9
     local lineSpacing_h = 9
     local maxLines = 4
-    local maxCol = 3
+    local maxCol = 2
     local col = 0
 
     libGUI.newControl.ctl_title(panelMainMenu, nil, {
@@ -282,7 +281,7 @@ local function buildMainMenu()
             bg = panelMainMenu.colors.active
         end
 
-        libGUI.newControl.ctl_button(panelMainMenu, nil,
+        libGUI.newControl.ctl_button_image(panelMainMenu, nil,
             {x = x, y = y, w = w, h = h, text = PageFiles[i].title,
             bgColor=bg,
             onPress=function()
@@ -310,10 +309,10 @@ local function getLableIfNeed(lastFieldY, field)
             or lbl.t == "YAW"
             or lbl.t == "COL"
             then
-            log("getLableIfNeed: found label: y=%s (%s)", lbl.y, lbl.t)
+            -- log("getLableIfNeed: found label: y=%s (%s)", lbl.y, lbl.t)
             exclude_lable = true
         end
-        log("getLableIfNeed: found label: y=%s (%s)", y, lbl.t)
+        -- log("getLableIfNeed: found label: y=%s (%s)", y, lbl.t)
 
         local y = lbl.y
         if y >= lastFieldY and y <= field.y and exclude_lable==false then
@@ -322,6 +321,34 @@ local function getLableIfNeed(lastFieldY, field)
         end
     end
     return nil
+end
+
+local function clipValue(val,min,max)
+    if val < min then
+        val = min
+    elseif val > max then
+        val = max
+    end
+    return val
+end
+
+local function updateValueChange(fieldId, newVal)
+    local f = Page.fields[fieldId]
+    local scale = f.scale or 1
+    local mult = f.mult or 1
+    f.value = clipValue(newVal/scale, (f.min or 0)/scale, (f.max or 255)/scale)
+    f.value = math.floor(f.value*scale/mult + 0.5)*mult/scale
+
+    if runningInSimulator then
+        return
+    end
+
+    for idx=1, #f.vals do
+        Page.values[f.vals[idx]] = bit32.rshift(math.floor(f.value*scale + 0.5), (idx-1)*8)
+    end
+    if f.upd and Page.values then
+        f.upd(Page)
+    end
 end
 
 local function buildFieldsPage()
@@ -342,11 +369,38 @@ local function buildFieldsPage()
 
     local title = (Page and Page.title or " ---")
 
-    libGUI.newControl.ctl_title(panelFieldsPage, nil, {
-        x=0,y=0,w=LCD_W,h=30,
-        text1="RF2 / "..title,
+    libGUI.newControl.ctl_title(panelFieldsPage, nil, {x=0,y=0,w=LCD_W,h=30,text1="RF2 / "..title,
         text1_x=10, bg_color=panelFieldsPage.colors.topbar.bg
     })
+
+    btnReload = libGUI.newControl.ctl_button(panelFieldsPage, "btnReload", {x=300,y=2,w=60,h=25,text="Reload",
+        onPress=function()
+            log("reload-data: %s", Page.title)
+            log("reloading data: %s", Page.title)
+            modalWatingStart("Reloading data...", 150,0)
+            invalidatePages()
+        end
+    })
+    -- btnReload.disabled = true
+
+    btnSave = libGUI.newControl.ctl_button(panelFieldsPage, "btnSave", {x=400,y=2,w=60,h=25,text="Save", bgColor=RED,
+        onPress=function()
+            log("saveSettings: %s", Page.title)
+            modalWatingStart(
+                "Saving page fields...",
+                protocol.saveTimeout,
+                protocol.saveMaxRetries+1,
+                function()
+                    log("modalWating: Retry")
+                end,
+                function()
+                    log("modalWating: gaveup")
+                end
+            )
+            -- saveSettings()
+        end
+    })
+    btnSave.disabled = true
 
     log("currentPageName: %s", currentPageName)
     if currentPageName == "Rates" then
@@ -371,10 +425,7 @@ local function buildFieldsPage()
         local f = Page.fields[i]
         log("fieldsPageBuild: %s. t: [%s]", i, f.t or "NA")
 
-        local txt = f.t
-        if f.t2 ~= nil then
-            txt = f.t2
-        end
+        local txt = f.t2 or f.t or "---"
 
         local col = 0
         local x = 10
@@ -407,40 +458,59 @@ local function buildFieldsPage()
 
         local txt2 = string.format("%s \n%s%s", txt, f.value, units)
 
-        if f.table ~= nil then
-            col_id = 0
-            y = last_y
-            libGUI.newControl.ctl_label(panelFieldsPage, nil, {x=x, y=y, w=0, h=h, text=txt})
-            log("fieldsPageBuild: i=%s, table0: %s, table1: %s (total: %s)", i, f.table[0], f.table[1], #f.table)
-            libGUI.newControl.ctl_dropdown(panelFieldsPage, nil,
-                {x=val_x, y=y, w=val_w, h=h, items=f.table, selected=f.value,
-                    callback=function()
-                        if f.postEdit then
-                            f.postEdit(Page)
-                        end
-                    end
-                } )
-
-            y = y + h + lineSpacing
-            last_y = y
-            col_id = 0
-        elseif f.label == true then
+        if f.label == true then
             col_id = 0
             y = last_y
             libGUI.newControl.ctl_label(panelFieldsPage, nil, {x=x, y=y, w=val_w, h=h, text=txt})
             y = y + lineSpacingLabel
             last_y = y
             col_id = 0
+
+        elseif f.table ~= nil then
+            col_id = 0
+            y = last_y
+            libGUI.newControl.ctl_label(panelFieldsPage, nil, {x=x, y=y, w=0, h=h, text=txt})
+            log("fieldsPageBuild: i=%s, table0: %s, table1: %s (total: %s)", i, f.table[0], f.table[1], #f.table)
+            libGUI.newControl.ctl_dropdown(panelFieldsPage, nil,
+                {x=val_x, y=y, w=val_w, h=h, items=f.table, selected=f.value,
+                    callback=function(ctl)
+                        if f.postEdit then
+                            f.postEdit(Page)
+                        end
+                        local selected1 = ctl.getSelected()
+                        local selected0or1based = panelFieldsPage._.tableBasedX_convertSelectedTo0or1Based(selected1, ctl.items0or1)
+                        -- log("fieldsPageBuild222: i=%s, selected1: %s, selected0or1based: %s", i, selected1, selected0or1based)
+                        updateValueChange(i, selected0or1based)
+                    end
+                } )
+
+            y = y + h + lineSpacing
+            last_y = y
+            col_id = 0
         else
             local x_Temp =10 + (col_id*(150+6))
-            libGUI.newControl.ctl_number_as_button(panelFieldsPage, nil, {
+
+            local help = ""
+            local units = ""
+            if f.id ~= nil and ctl_fieldsInfo[f.id] then
+                help = ctl_fieldsInfo[f.id].help or ""
+                units = ctl_fieldsInfo[f.id].units or ""
+            end
+
+            libGUI.newControl.ctl_number_as_button(panelFieldsPage, txt, {
                 x=x_Temp, y=y, w=150, h=h_btn,
-                text=txt,
-                f=f,
+                steps=f.mult,
+                value=f.value,
+                min=f.min/(f.scale or 1),
+                max=f.max/(f.scale or 1),
                 units=units,
-                fieldsInfo=ctl_fieldsInfo,
-                callbackOnModalActive=function(ctl) is_modal_number_editor_active = true end,
-                callbackOnModalInactive=function(ctl) is_modal_number_editor_active = false end
+                text=txt,
+                help=help,
+                -- callbackOnModalActive=function(ctl)    end,
+                -- callbackOnModalInactive=function(ctl)  end
+                onValueUpdated=function(ctl, newVal)
+                    updateValueChange(i, newVal)
+                end
             })
 
             col_id = col_id + 1
@@ -455,7 +525,35 @@ local function buildFieldsPage()
 
         log("fieldsPageBuild: i=%s, col=%s, y=%s, text: %s", i, col, y, txt2)
     end
+
+    -- -- footer
+    -- libGUI.newControl.ctl_title(panelFieldsPage, nil, {x=0,y=LCD_H-15,w=LCD_W,h=15,text1="bank: 1*    cpu=56%",
+    -- text1_x=10, bg_color=lcd.RGB(0x2B, 0x79, 0xD7)})
+
 end
+
+local function updateNeedToSaveFlag()
+    if panelFieldsPage == nil then
+        return false
+    end
+    -- log("updateNeedToSaveFlag: #panelFieldsPage._.elements=%s", #panelFieldsPage._.elements)
+
+
+    local tempNeedToSave = false
+    for i, ctl in ipairs(panelFieldsPage._.elements) do
+        -- log("updateNeedToSaveFlag: %s (%s) %s (%s)", i, ctl, ctl.text, ctl.id)
+        if ctl.isDirty then
+            -- log("updateNeedToSaveFlag: x=%s,y=%s txt=%s, is_dirty:%s", ctl.x, ctl.y, ctl.text, ctl.isDirty())
+            tempNeedToSave = tempNeedToSave or ctl.isDirty()
+        end
+    end
+    isFiledsNeedToSave = tempNeedToSave
+    btnSave.disabled = not isFiledsNeedToSave
+    btnReload.disabled = not isFiledsNeedToSave
+
+    -- log("updateNeedToSaveFlag: ---isFiledsNeedToSave=%s---", isFiledsNeedToSave)
+end
+
 
 -- local function drawPopupMenu()
 --     local x = radio.MenuBox.x
@@ -484,147 +582,162 @@ end
 -- init
 -- ---------------------------------------------------------------------
 
+local function run_ui_spalsh(event, touchState)
+    if splash_start_time == 0 then
+        img_bg1 = Bitmap.open("images/splash1.png")
+        splash_start_time = getTime()
+    end
+    lcd.clear()
+    lcd.drawFilledRectangle(0, 0, LCD_W, LCD_H, GREY)
+    lcd.drawBitmap(img_bg1, 0, 0)
+    local elapsed = getTime() - splash_start_time;
+    local elapsedMili = elapsed * 10;
+    -- if (elapsedMili >= 800) then??
+    if (elapsedMili >= 10) then
+        uiState = uiStatus.init
+    end
+
+end
+
+local function run_ui_init(event, touchState)
+    img_bg1 = nil
+    lcd.clear()
+    -- drawScreenTitle("Rotorflight "..LUA_VERSION, uiState)
+    lcd.drawFilledRectangle(0, 0, LCD_W, 30, COLOR_THEME_SECONDARY1)--lcd.RGB(0xE0, 0xEC, 0xF0))
+    lcd.drawText(10,5,"Rotorflight "..LUA_VERSION, MENU_TITLE_COLOR)
+
+    init = init or assert(loadScript("ui_init.lua"))()
+    -- drawTextMultiline(4, radio.yMinLimit, init.t)
+    lcd.drawText(10, radio.yMinLimit, init.t)
+    -- panelInitPage.draw()
+    -- panelInitPage.onEvent(event, touchState)
+
+    if not init.f() then
+        return 0
+    end
+    init = nil
+    PageFiles = assert(loadScript("pages.lua"))()
+    invalidatePages()
+    -- buildPopupMenu()
+    buildMainMenu()
+    uiState = prevUiState or uiStatus.mainMenu
+    prevUiState = nil
+
+end
+
+local function run_ui_menu(event, touchState)
+    lcd.clear()
+
+    if libGUI.isNoPrompt() then
+        panelMainMenu.draw()
+        panelMainMenu.onEvent(event, touchState)
+    end
+
+    if event == EVT_VIRTUAL_ENTER_LONG then
+        killEnterBreak = 1
+        -- createPopupMenu()
+        -- is_popupmenu_active = true
+        -- killEvents(event) -- X10/T16 issue: pageUp is a long press
+    end
+end
+
+local function run_ui_pages(event, touchState)
+    lcd.clear()
+
+    -- if pageState == pageStatus.saving then
+    --     if getTime() > saveTS + saveTimeout then
+    --         if saveRetries < saveMaxRetries then
+    --             saveSettings()
+    --         else
+    --             pageState = pageStatus.display
+    --             invalidatePages()
+    --         end
+    --     end
+    -- end
+
+    if not Page then
+        Page = assert(loadScript("PAGES/"..PageFiles[currentPage].script))()
+        collectgarbage()
+    end
+
+    if not Page.values and pageState == pageStatus.display then
+        requestPage()
+    end
+
+    if pageState == pageStatus.saving then
+        local saveMsg = "Saving..."
+        if saveRetries > 0 then
+            saveMsg = "Retrying"
+        end
+        lcd.drawFilledRectangle(radio.SaveBox.x,radio.SaveBox.y,radio.SaveBox.w,radio.SaveBox.h,backgroundFill)
+        lcd.drawRectangle(radio.SaveBox.x,radio.SaveBox.y,radio.SaveBox.w,radio.SaveBox.h,SOLID)
+        lcd.drawText(radio.SaveBox.x+radio.SaveBox.x_offset,radio.SaveBox.y+radio.SaveBox.h_offset,saveMsg,DBLSIZE + globalTextOptions)
+    end
+
+    if panelFieldsPage then
+        panelFieldsPage.draw()
+        if modalWatingPanel==nil then
+            panelFieldsPage.onEvent(event, touchState)
+        end
+    end
+
+end
+
 local function run_ui(event, touchState)
     -- log("run_ui: [%s] [%s]", event, touchState)
 
-    local is_modal_active = is_modal_number_editor_active or is_popupmenu_active
-    -- log('is_modal_active: %s', is_modal_active)
+    updateNeedToSaveFlag()
 
-
-    if is_popupmenu_active then
+    if libGUI.isNoPrompt() then
         if event == EVT_VIRTUAL_ENTER and killEnterBreak == 1 then
             killEnterBreak = 0
             killEvents(event)   -- X10/T16 issue: pageUp is a long press
         end
     end
-    if popupMenu then
-        -- drawPopupMenu()
-        -- if event == EVT_VIRTUAL_EXIT then
-        --     popupMenu = nil
-        -- elseif event == EVT_VIRTUAL_PREV then
-        --     incPopupMenu(-1)
-        -- elseif event == EVT_VIRTUAL_NEXT then
-        --     incPopupMenu(1)
-        -- elseif event == EVT_VIRTUAL_ENTER then
-        --     if killEnterBreak == 1 then
-        --         killEnterBreak = 0
-        --     else
-        --         popupMenu[popupMenuActive].f()
-        --         popupMenu = nil
-        --     end
-        -- end
+
+    -- log("run_ui: %s, %s, %s", libGUI.isNoPrompt(), libGUI.showingPrompt, libGUI.prompt)
+
+    if uiState == uiStatus.splash then
+        run_ui_spalsh(event, touchState)
+
     elseif uiState == uiStatus.init then
-        lcd.clear()
-        -- drawScreenTitle("Rotorflight "..LUA_VERSION, uiState)
-        lcd.drawFilledRectangle(0, 0, LCD_W, 30, COLOR_THEME_SECONDARY1)--lcd.RGB(0xE0, 0xEC, 0xF0))
-        lcd.drawText(10,5,"Rotorflight "..LUA_VERSION, MENU_TITLE_COLOR)
-
-        init = init or assert(loadScript("ui_init.lua"))()
-        -- drawTextMultiline(4, radio.yMinLimit, init.t)
-        lcd.drawText(10, radio.yMinLimit, init.t)
-        -- panelInitPage.draw()
-        -- panelInitPage.onEvent(event, touchState)
-
-        if not init.f() then
-            return 0
-        end
-        init = nil
-        PageFiles = assert(loadScript("pages.lua"))()
-        invalidatePages()
-        buildPopupMenu()
-        buildMainMenu()
-        uiState = prevUiState or uiStatus.mainMenu
-        prevUiState = nil
-
+        run_ui_init(event, touchState)
 
     elseif uiState == uiStatus.mainMenu then
-        lcd.clear()
-        -- log("is_modal_active: %s", is_modal_active)
-        if is_popupmenu_active == true then
-            log("is_modal_active: onevent()")
-            panelPopupMenu.onEvent(event, touchState)
-            panelPopupMenu.draw()
-        end
-
-        if is_modal_active == false then
-            -- log("is_modal_active: OFF")
-            panelMainMenu.draw()
-            panelMainMenu.onEvent(event, touchState)
-        end
-
-        if event == EVT_VIRTUAL_EXIT then
-            return 2
-        elseif event == EVT_VIRTUAL_ENTER_LONG then
-            killEnterBreak = 1
-            -- createPopupMenu()
-            is_popupmenu_active = true
-            -- killEvents(event) -- X10/T16 issue: pageUp is a long press
-        end
-
+        run_ui_menu(event, touchState)
 
     elseif uiState == uiStatus.pages then
-        lcd.clear()
-
-        if pageState == pageStatus.saving then
-            if saveTS + saveTimeout < getTime() then
-                if saveRetries < saveMaxRetries then
-                    saveSettings()
-                else
-                    pageState = pageStatus.display
-                    invalidatePages()
-                end
-            end
-        elseif pageState == pageStatus.display then
+        if pageState == pageStatus.display and libGUI.isNoPrompt() then
             if event == EVT_VIRTUAL_EXIT then
                 change_state_to_menu()
                 return 0
             end
         end
 
-        if not Page then
-            Page = assert(loadScript("PAGES/"..PageFiles[currentPage].script))()
-            collectgarbage()
-            -- buildFieldsPage()
-        end
-        if not Page.values and pageState == pageStatus.display then
-            requestPage()
-        end
+        run_ui_pages(event, touchState)
 
-        if pageState == pageStatus.saving then
-            local saveMsg = "Saving..."
-            if saveRetries > 0 then
-                saveMsg = "Retrying"
-            end
-            lcd.drawFilledRectangle(radio.SaveBox.x,radio.SaveBox.y,radio.SaveBox.w,radio.SaveBox.h,backgroundFill)
-            lcd.drawRectangle(radio.SaveBox.x,radio.SaveBox.y,radio.SaveBox.w,radio.SaveBox.h,SOLID)
-            lcd.drawText(radio.SaveBox.x+radio.SaveBox.x_offset,radio.SaveBox.y+radio.SaveBox.h_offset,saveMsg,DBLSIZE + globalTextOptions)
-        end
 
-        log("is_modal_active: %s", is_modal_active)
-        if is_popupmenu_active == true then
-            log("is_modal_active: onevent()")
-            panelPopupMenu.onEvent(event, touchState)
-            panelPopupMenu.draw()
-        end
+    -- elseif uiState == uiStatus.confirm then
+    --     drawScreenFields()
+    --     if event == EVT_VIRTUAL_ENTER then
+    --         uiState = uiStatus.init
+    --         init = Page.init
+    --         invalidatePages()
+    --     elseif event == EVT_VIRTUAL_EXIT then
+    --         invalidatePages()
+    --         uiState = prevUiState
+    --         prevUiState = nil
+    --     end
+    end
 
-        if is_modal_active == false then
-            log("is_modal_active: OFF")
-        end
-        if panelFieldsPage then
-            panelFieldsPage.draw()
-            panelFieldsPage.onEvent(event, touchState)
-        end
-
-    elseif uiState == uiStatus.confirm then
-        drawScreenFields()
-        if event == EVT_VIRTUAL_ENTER then
-            uiState = uiStatus.init
-            init = Page.init
+    if modalWatingPanel then
+        local isEnd = modalWatingCtl.calc()
+        modalWatingPanel.draw()
+        if isEnd then
+            modalWatingPanel = nil
+            btnSave.disabled = true
+            btnReload.disabled = true
             invalidatePages()
-        elseif event == EVT_VIRTUAL_EXIT then
-            invalidatePages()
-            uiState = prevUiState
-            prevUiState = nil
         end
     end
 
@@ -647,7 +760,6 @@ local function run_ui(event, touchState)
                 buildFieldsPage()
             end
         end
-
     end
 
     return 0

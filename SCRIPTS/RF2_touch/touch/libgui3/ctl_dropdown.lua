@@ -83,7 +83,9 @@ function dropDown(panel, id, args, flags)
             local dd = lh / 2
             local yy = y + (h - dd) / 2
             local xx = (x-5) + w - 1.15 * dd
-            panel.drawTriangle(x-5 + w, yy, (x-5 + w + xx) / 2, yy + dd, xx, yy, panel.colors.primary1)
+            local triangleColor = ctlMenu.isDirty() and RED or panel.colors.btn.txt
+            panel.drawTriangle(x-5 + w, yy, (x-5 + w + xx) / 2, yy + dd, xx, yy, triangleColor)
+
         end
     end
 
