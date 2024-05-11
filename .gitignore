@@ -39,3 +39,8 @@ luac.out
 *.x86_64
 *.hex
 
+/.idea/.gitignore
+/.idea/misc.xml
+/.idea/modules.xml
+/.idea/rf2-touch-edgetx-do-not-use.iml
+/.idea/vcs.xml
