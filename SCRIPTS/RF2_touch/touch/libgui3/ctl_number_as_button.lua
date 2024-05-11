@@ -1,10 +1,9 @@
 -- Create a number button that can be edited
--- args: x, y, w, h, text, f, units, steps
+-- args: x, y, w, h, text, text_long, f, units, steps
 
 function ctl_number_as_button(panel, id, args, flags)
-    panel.log("number_as_button.new(%s, min:%s, max:%s)", id, args.min, args.max)
+    panel.log("number_as_button.new(%s, min:%s, max:%s, steps:%s)", id, args.min, args.max, args.steps)
     local self = {
-        -- flags = bit32.bor(flags or panel.flags, CENTER, VCENTER),
         disabled = false,
         editable = true,
         hidden= false,
@@ -16,6 +15,7 @@ function ctl_number_as_button(panel, id, args, flags)
         w = args.w,
         h = args.h,
         text = args.text,
+        text_long = args.text_long,
         help = args.help,
         min = args.min or 0,
         max = args.max or 100,
@@ -96,11 +96,10 @@ function ctl_number_as_button(panel, id, args, flags)
         panel.log("[%s] number_as_button::start_number_editor(%s) v:%s,min:%s,max:%s", self.id, self.value, self.text, self.min, self.max)
         self.modalPanel = panel.newPanel("modal-fancy-editor")
         self.ctlNumberEditing = self.modalPanel.newControl.ctl_number_editor(self.modalPanel, "numEditor1", {
-            x=20, y=45, w=430, h=210,
             steps=self.steps,
             value=self.value,min=self.min,max=self.max,
             initiatedValue=self.initiatedValue,
-            text=self.text,
+            text=self.text_long or self.text,
             help=self.help,
                 onCancel=function()
                     panel.log("[%s] number_as_button::onCancelCallback(%s)", self.id, self.value)

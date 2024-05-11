@@ -47,6 +47,16 @@ M.newControl = {}
 M.prompt = nil
 M.showingPrompt = false
 
+-- Show prompt
+function M.showPrompt(prompt)
+    M.prompt = prompt
+end
+
+-- Dismiss prompt
+function M.dismissPrompt()
+    M.prompt = nil
+end
+
 function M.getVer()
     return app_ver
 end
@@ -441,12 +451,12 @@ function M.newPanel(id, args)
 
     -- Show prompt
     function panel.showPrompt(prompt)
-        M.prompt = prompt
+        M.showPrompt(prompt)
     end
 
     -- Dismiss prompt
     function panel.dismissPrompt()
-        M.prompt = nil
+        M.dismissPrompt()
     end
 
     -----------------------------------------------------------------------------------------------

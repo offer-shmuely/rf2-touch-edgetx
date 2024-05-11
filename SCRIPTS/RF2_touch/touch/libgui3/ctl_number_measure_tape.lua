@@ -1,38 +1,14 @@
--- -----------------------------------------------------------------------------------------------
--- better font size names
-local FONT_SIZES = {
-    FONT_38 = XXLSIZE, -- 38px
-    FONT_16 = DBLSIZE, -- 16px
-    FONT_12 = MIDSIZE, -- 12px
-    FONT_8 = 0, -- Default 8px
-    FONT_6 = SMLSIZE -- 6px
-}
-
 -----------------------------------------------------------------------------------------------
-local function log(fmt, ...)
-    print(string.format("111: " .. fmt, ...))
-end
-
------------------------------------------------------------------------------------------------
--- Default flags and colors, can be changed by client
-local default_flags = 0
-
--- The default callBack
-local function doNothing()
-end
-
------------------------------------------------------------------------------------------------
--- Create a button to trigger a function
 -- args: x, y, w, h, start_val, min, max, onChangeCallBack
-function measureTape(gui, id, args, flags)
+function measureTape(panel, id, args, flags)
     local self = {
         -- flags = bit32.bor(flags or gui.flags, CENTER, VCENTER),
-        flags = bit32.bor(flags or default_flags, CENTER, VCENTER),
+        flags = bit32.bor(flags or 0, CENTER, VCENTER),
         disabled = false,
-        editable = false,
+        editable = true,
         hidden = false,
 
-        gui = gui,
+        panel = panel,
         id = id,
         x = args.x,
         y = args.y,
@@ -40,7 +16,8 @@ function measureTape(gui, id, args, flags)
         h = args.h,
         val_min = args.min,
         val_max = args.max,
-        callBack = args.onChangeCallBack or doNothing,
+        val_steps = args.steps or 1,
+        callBack = args.onChangeCallBack or panel.doNothing,
 
         dy = 6,
         num_vals = nil,
@@ -50,8 +27,25 @@ function measureTape(gui, id, args, flags)
         scrolling_base_y = nil,
         val = args.start_val,
         val_on_start_sliding = nil,
-        lastValReported = nil,
+        lastValReporrted = nil,
     }
+
+    -- -----------------------------------------------------------------------------------------------
+-- better font size names
+local FONT_SIZES = {
+    FONT_38 = XXLSIZE, -- 38px
+    FONT_16 = DBLSIZE, -- 16px
+    FONT_12 = MIDSIZE, -- 12px
+    FONT_8 = 0, -- Default 8px
+    FONT_6 = SMLSIZE -- 6px
+}
+-----------------------------------------------------------------------------------------------
+local function log(fmt, ...)
+    print(string.format("111: " .. fmt, ...))
+end
+-----------------------------------------------------------------------------------------------
+
+
 
     function self.get_value()
         if self.scroll_offset_y == nil then
@@ -60,15 +54,39 @@ function measureTape(gui, id, args, flags)
         end
         local d_val = math.floor(self.scroll_offset_y / self.dy)
         -- local n_val = self.val + d_val
-        local n_val = self.val_on_start_sliding + d_val
+        local n_val = self.val_on_start_sliding + (d_val * self.val_steps)
         n_val = math.min(n_val, self.val_max)
         n_val = math.max(n_val, self.val_min)
-        -- log("[%s] get_value() - scroll_offset_y=%s, val=%s, d_val=%s, ==> new_val=%s", self.id, self.scroll_offset_y, self.val, d_val, n_val)
+        n_val = math.floor(n_val/self.val_steps + 0.5)*self.val_steps
+        log("[%s] get_value() - scroll_offset_y=%s,%s val=%s, d_val=%s, ==> new_val=%s", self.id, self.scroll_offset_y, self.dy, self.val, d_val, n_val)
         return n_val
+    end
+
+    function self.format_val(v)
+        local txt
+        if self.val_steps < 0.1 then
+            txt = string.format("%.2f", v)
+        elseif self.val_steps < 1 then
+            txt = string.format("%.1f", v)
+        else
+            txt = string.format("%d", v)
+        end
+        -- log("n_val(%s) = %s", v, txt)
+        return txt
     end
 
     function self.inc_value(step)
         local n_val = self.val + step
+        scale = 5
+        mult =1
+        print("n_val 1", n_val)
+        n_val = math.floor(n_val/self.val_steps + 0.5)*self.val_steps
+        panel.log("n_val 2, %s, steps=%s, %s, %s",
+            n_val,
+            self.val_steps,
+            math.floor(n_val/self.val_steps + 0.5),
+            math.floor(n_val/self.val_steps + 0.5)*self.val_steps
+        )
         n_val = math.min(n_val, self.val_max)
         n_val = math.max(n_val, self.val_min)
         self.val = n_val
@@ -103,7 +121,7 @@ function measureTape(gui, id, args, flags)
         end
 
         if focused then
-            self.gui.drawFocus(x, y-h, w, h*2, border)
+            self.panel.drawFocus(x, y-h, w, h*2, border)
         end
 
         lcd.drawFilledRectangle(x, y, w, h, GREEN)
@@ -122,13 +140,14 @@ function measureTape(gui, id, args, flags)
 
         -- log("scrolling num_vals: %s", num_vals)
         for i = 0, num_vals, 1 do
-            local v1 = new_val + i
+            local v1 = new_val + (i * self.val_steps)
             local y1 = y + i * self.dy
             if v1 >= self.val_min and v1 <= self.val_max then
-                if math.fmod(v1, 10) == 0 then
+                log("%s. dn n_val v1=%s, steps=%s,  mod1=%s, mod2=%s", i, v1, self.val_steps, math.fmod(v1, 1), v1 % (10*self.val_steps))
+                if v1 % (10*self.val_steps) == 0 then
                     lcd.drawFilledRectangle(x, y1, 20, 2, BLACK)
-                    lcd.drawText(x + 25, y1 - 10, string.format("%s", v1), FONT_SIZES.FONT_8 + BLACK)
-                elseif math.fmod(v1, 5) == 0 then
+                    lcd.drawText(x + 25, y1 - 10, self.format_val(v1), FONT_SIZES.FONT_8 + BLACK)
+                elseif v1 %(5*self.val_steps) == 0 then
                     lcd.drawFilledRectangle(x, y1, 15, 2, BLACK)
                 else
                     lcd.drawFilledRectangle(x, y1, 10, 2, RED)
@@ -136,13 +155,14 @@ function measureTape(gui, id, args, flags)
             end
         end
         for i = 0, 0 - num_vals, -1 do
-            local v1 = new_val + i
+            local v1 = new_val + (i * self.val_steps)
             local y1 = y + i * self.dy
             if v1 >= self.val_min and v1 <= self.val_max then
-                if math.fmod(v1, 10) == 0 then
+                log("%s. up  n_val v1=%s, mod1=%s, mod2=%s", i, v1, math.fmod(v1, 5*self.val_steps), math.fmod(v1, 10*self.val_steps))
+                if math.fmod(v1, 10*self.val_steps) == 0 then
                     lcd.drawFilledRectangle(x, y1, 20, 2, BLACK)
-                    lcd.drawText(x + 25, y1 - 10, string.format("%s", v1), FONT_SIZES.FONT_8 + BLACK)
-                elseif math.fmod(v1, 5) == 0 then
+                    lcd.drawText(x + 25, y1 - 10, self.format_val(v1), FONT_SIZES.FONT_8 + BLACK)
+                elseif math.fmod(v1, 5*self.val_steps) == 0 then
                     lcd.drawFilledRectangle(x, y1, 15, 2, BLACK)
                 else
                     lcd.drawFilledRectangle(x, y1, 12, 2, RED)
@@ -151,7 +171,7 @@ function measureTape(gui, id, args, flags)
         end
 
         if self.disabled then
-            gui.drawFilledRectangle(x, y, w, h, GREY, 7)
+            panel.drawFilledRectangle(x, y, w, h, GREY, 7)
         end
     end
 
@@ -201,8 +221,8 @@ function measureTape(gui, id, args, flags)
     end
 
 
-    if gui~=nil then
-        gui.addCustomElement(self)
+    if panel~=nil then
+        panel.addCustomElement(self)
     end
     return self
 end

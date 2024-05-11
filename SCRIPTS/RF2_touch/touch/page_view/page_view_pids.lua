@@ -13,10 +13,10 @@ function M.buildSpecialFields(libGUI, panel,Page,  y, runningInSimulator)
     -- col headers
     local txt
     libGUI.newControl.ctl_title(panel, nil, {x=0,y=y, w=col1_w, h=hdr_h, text1_x=10, bg_color=GREY, text1=" "})
-    libGUI.newControl.ctl_title(panel, nil, {x=col1_w+1+0*(col_w2), y=y, w=col_w, h=hdr_h, text1_x="CENTER", bg_color=GREY, text1=Page.labels[6].t})
-    libGUI.newControl.ctl_title(panel, nil, {x=col1_w+1+1*(col_w2), y=y, w=col_w, h=hdr_h, text1_x="CENTER", bg_color=GREY, text1=Page.labels[8].t})
-    libGUI.newControl.ctl_title(panel, nil, {x=col1_w+1+2*(col_w2), y=y, w=col_w, h=hdr_h, text1_x="CENTER", bg_color=GREY, text1=Page.labels[10].t .." ".. Page.labels[11].t})
-    libGUI.newControl.ctl_title(panel, nil, {x=col1_w+1+3*(col_w2), y=y, w=col_w, h=hdr_h, text1_x="CENTER", bg_color=GREY, text1=Page.labels[12].t2 .." ".. Page.labels[13].t2})
+    libGUI.newControl.ctl_title(panel, nil, {x=col1_w+1+0*(col_w2), y=y, w=col_w, h=hdr_h, text1_x="CENTER", bg_color=GREY, text1="P"})
+    libGUI.newControl.ctl_title(panel, nil, {x=col1_w+1+1*(col_w2), y=y, w=col_w, h=hdr_h, text1_x="CENTER", bg_color=GREY, text1="I"})
+    libGUI.newControl.ctl_title(panel, nil, {x=col1_w+1+2*(col_w2), y=y, w=col_w, h=hdr_h, text1_x="CENTER", bg_color=GREY, text1="D"})
+    libGUI.newControl.ctl_title(panel, nil, {x=col1_w+1+3*(col_w2), y=y, w=col_w, h=hdr_h, text1_x="CENTER", bg_color=GREY, text1="Feed Fwd"})
 
     y = y + hdr_h
     -- line names
@@ -40,11 +40,10 @@ function M.buildSpecialFields(libGUI, panel,Page,  y, runningInSimulator)
 
             libGUI.newControl.ctl_number_as_button(panel, "butnum-"..col.."-"..row, {
                 x=x1+1, y=y1+1, w=col_w-2, h=row_h-2, text=nil,
-                steps=f.mult,
-                value=f.value,
                 min=f.min /  (f.scale or 1),
                 max=f.max /  (f.scale or 1),
-                scale=(f.scale or 1),
+                steps=(1/(f.scale or 1))*(f.mult or 1),
+                value=f.value,
                 units="",
 
             })
@@ -62,8 +61,8 @@ function M.buildSpecialFields(libGUI, panel,Page,  y, runningInSimulator)
     -- col headers
     local txt
     libGUI.newControl.ctl_title(panel, nil, {x=0, y=y, w=col1_w, h=hdr_h, text1_x=10, bg_color=GREY, text1=" "})
-    libGUI.newControl.ctl_title(panel, nil, {x=col1_w+1+0*(col_w2), y=y, w=col_w, h=hdr_h, text1_x=="CENTER", bg_color=GREY, text1=Page.labels[19].t2}) -- boost
-    libGUI.newControl.ctl_title(panel, nil, {x=col1_w+1+1*(col_w2), y=y, w=col_w, h=hdr_h, text1_x=="CENTER", bg_color=GREY, text1=Page.labels[20].t2}) -- offset
+    libGUI.newControl.ctl_title(panel, nil, {x=col1_w+1+0*(col_w2), y=y, w=col_w, h=hdr_h, text1_x=="CENTER", bg_color=GREY, text1="Boost"}) -- boost
+    libGUI.newControl.ctl_title(panel, nil, {x=col1_w+1+1*(col_w2), y=y, w=col_w, h=hdr_h, text1_x=="CENTER", bg_color=GREY, text1="Offset"}) -- offset
 
     y = y + hdr_h
     -- line names

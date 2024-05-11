@@ -22,7 +22,7 @@ function ctl_waiting_dialog(panel, id, args)
         onGaveup = args.callbackGaveup or panel._.doNothing,
 
         h_header = 30,
-        saveTS = getTime()
+        startTS = getTime()
     }
     --  print all args
     for k,v in pairs(args) do
@@ -30,14 +30,13 @@ function ctl_waiting_dialog(panel, id, args)
     end
 
     function self.calc()
-        -- panel.log("modalWating calc %s/%s retry:%s/%s", getTime() - self.saveTS, self.timeout,  self.retries, self.retryCount)
-        if getTime() - self.saveTS > self.timeout then
+        -- panel.log("modalWating calc %s/%s retry:%s/%s", getTime() - self.startTS, self.timeout,  self.retries, self.retryCount)
+        if getTime() - self.startTS > self.timeout then
             if self.retries < self.retryCount then
                 self.onRetry()
                 self.retries  = self.retries +1
-                self.saveTS = getTime()
+                self.startTS = getTime()
             else
-                panel.dismissPrompt()
                 self.onGaveup()
                 return true
             end
@@ -69,7 +68,7 @@ function ctl_waiting_dialog(panel, id, args)
         end
 
         -- progress
-        local percent = (getTime() - self.saveTS) / self.timeout
+        local percent = (getTime() - self.startTS) / self.timeout
 
         -- local fg_col = lcd.RGB(0x00, 0xB0, 0xDC)
         local prg_w = w-30

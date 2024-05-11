@@ -96,7 +96,6 @@ function number(panel, id, args, flags)
                 killEvents(event)   -- X10/T16 issue: pageUp is a long press
                 self.modalPanel = panel.newPanel("modal-fancy-editor")
                 self.ctlNumberEditing = self.modalPanel.newControl.ctl_number_editor(self.modalPanel, "numEditor1", {
-                    x=20, y=45, w=430, h=210,
                     value=self.value,min=self.min,max=self.max,
                     text=self.text,
                     help=self.help,

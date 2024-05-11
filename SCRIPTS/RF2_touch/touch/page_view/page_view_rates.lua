@@ -40,11 +40,10 @@ function M.buildSpecialFields(libGUI, panel,Page,  y, runningInSimulator)
 
             libGUI.newControl.ctl_number_as_button(panel,  "rates-"..col.."-"..row, {
                 x=x+1, y=y+1, w=col_w-2, h=row_h-2,
-                steps=f.mult,
-                value=f.value,
                 min=f.min /  (f.scale or 1),
                 max=f.max /  (f.scale or 1),
-                scale=(f.scale or 1),
+                steps=(1/(f.scale or 1))*(f.mult or 1),
+                value=f.value,
                 units="",
                 text=nil, help=nil,
             })
