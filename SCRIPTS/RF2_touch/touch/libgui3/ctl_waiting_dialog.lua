@@ -18,8 +18,8 @@ function ctl_waiting_dialog(panel, id, args)
         timeout = args.timeout,
         retryCount = args.retryCount,
         retries = 1,
-        onRetry = args.callbackRetry or panel._.doNothing,
-        onGaveup = args.callbackGaveup or panel._.doNothing,
+        onRetry = args.callbackRetry or panel.doNothing,
+        onGaveup = args.callbackGaveup or panel.doNothing,
 
         h_header = 30,
         startTS = getTime()

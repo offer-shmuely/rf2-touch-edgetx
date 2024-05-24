@@ -1,7 +1,7 @@
 -- Create a number button that can be edited
 -- args: x, y, w, h, text, text_long, f, units, steps
 
-function ctl_number_as_button(panel, id, args, flags)
+function ctl_rf2_button_number(panel, id, args, flags)
     panel.log("number_as_button.new(%s, min:%s, max:%s, steps:%s)", id, args.min, args.max, args.steps)
     local self = {
         disabled = false,
@@ -24,9 +24,9 @@ function ctl_number_as_button(panel, id, args, flags)
         units = args.units,
         steps = args.steps or 1,
         -- bg_color = args.bg_color,
-        onValueUpdated = args.onValueUpdated or panel._.doNothing,
-        callbackOnModalActive = args.callbackOnModalActive or panel._.doNothing,
-        callbackOnModalInactive = args.callbackOnModalInactive or panel._.doNothing,
+        onValueUpdated = args.onValueUpdated or panel.doNothing,
+        callbackOnModalActive = args.callbackOnModalActive or panel.doNothing,
+        callbackOnModalInactive = args.callbackOnModalInactive or panel.doNothing,
 
         modalPanel = nil,
         ctlNumberEditing = nil,
@@ -147,5 +147,5 @@ function ctl_number_as_button(panel, id, args, flags)
     return self
 end
 
-return ctl_number_as_button
+return ctl_rf2_button_number
 

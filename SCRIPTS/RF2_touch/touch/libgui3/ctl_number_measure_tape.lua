@@ -17,7 +17,7 @@ function measureTape(panel, id, args, flags)
         val_min = args.min,
         val_max = args.max,
         val_steps = args.steps or 1,
-        callBack = args.onChangeCallBack or panel.doNothing,
+        callback = args.onChangeCallBack or panel.doNothing,
 
         dy = 6,
         num_vals = nil,
@@ -27,25 +27,12 @@ function measureTape(panel, id, args, flags)
         scrolling_base_y = nil,
         val = args.start_val,
         val_on_start_sliding = nil,
-        lastValReporrted = nil,
+        lastValReported = nil,
     }
 
-    -- -----------------------------------------------------------------------------------------------
--- better font size names
-local FONT_SIZES = {
-    FONT_38 = XXLSIZE, -- 38px
-    FONT_16 = DBLSIZE, -- 16px
-    FONT_12 = MIDSIZE, -- 12px
-    FONT_8 = 0, -- Default 8px
-    FONT_6 = SMLSIZE -- 6px
-}
------------------------------------------------------------------------------------------------
-local function log(fmt, ...)
-    print(string.format("111: " .. fmt, ...))
-end
------------------------------------------------------------------------------------------------
-
-
+    local function log(fmt, ...)
+        print(string.format("mtrt: " .. fmt, ...))
+    end
 
     function self.get_value()
         if self.scroll_offset_y == nil then
@@ -58,7 +45,7 @@ end
         n_val = math.min(n_val, self.val_max)
         n_val = math.max(n_val, self.val_min)
         n_val = math.floor(n_val/self.val_steps + 0.5)*self.val_steps
-        log("[%s] get_value() - scroll_offset_y=%s,%s val=%s, d_val=%s, ==> new_val=%s", self.id, self.scroll_offset_y, self.dy, self.val, d_val, n_val)
+        -- log("[%s] get_value() - scroll_offset_y=%s,%s val=%s, d_val=%s, ==> new_val=%s", self.id, self.scroll_offset_y, self.dy, self.val, d_val, n_val)
         return n_val
     end
 
@@ -81,12 +68,9 @@ end
         mult =1
         print("n_val 1", n_val)
         n_val = math.floor(n_val/self.val_steps + 0.5)*self.val_steps
-        panel.log("n_val 2, %s, steps=%s, %s, %s",
-            n_val,
-            self.val_steps,
-            math.floor(n_val/self.val_steps + 0.5),
-            math.floor(n_val/self.val_steps + 0.5)*self.val_steps
-        )
+        -- panel.log("n_val 2, %s, steps=%s, %s, %s",n_val,self.val_steps,
+        --     math.floor(n_val/self.val_steps + 0.5),
+        --     math.floor(n_val/self.val_steps + 0.5)*self.val_steps)
         n_val = math.min(n_val, self.val_max)
         n_val = math.max(n_val, self.val_min)
         self.val = n_val
@@ -94,22 +78,22 @@ end
     end
 
     function self.set_value(v)
-        log("set_value(%s)", v)
+        -- log("set_value(%s)", v)
         self.val = v
     end
 
     function self.covers(tsx, tsy)
-        log("::covers() ?")
+        -- log("::covers() ?")
         if (tsx >= self.x
             and tsx <= self.x + self.w
             and tsy >= self.y - self.h
             and tsy <= self.y + self.h)
             then
-                log("::covers() true")
+                -- log("::covers() true")
                 return true
         end
 
-        log("::covers() - false")
+        -- log("::covers() - false")
         return false
     end
 
@@ -117,24 +101,28 @@ end
         local x,y,w,h = self.x, self.y, self.w,self.h
         local new_val = self.get_value()
         if self.scrolling then
-            log("[%s] scrolling scroll_offset_y=%s, val=%s, d_val=%s, ==> new_val=%s", self.id, self.scroll_offset_y,self.val, d_val, self.get_value())
+            -- log("[%s] scrolling scroll_offset_y=%s, val=%s, d_val=%s, ==> new_val=%s", self.id, self.scroll_offset_y,self.val, d_val, self.get_value())
         end
 
         if focused then
             self.panel.drawFocus(x, y-h, w, h*2, border)
         end
 
-        lcd.drawFilledRectangle(x, y, w, h, GREEN)
-        if self.scrolling then
-            lcd.drawFilledRectangle(x - 4, y - 4, w + 8, h + 8, GREY)
-        else
-            lcd.drawFilledRectangle(x, y, w + 5, h + 4, GREY, 10)
-        end
+        -- lcd.drawFilledRectangle(x, y, w, h, GREEN)
+        -- if self.scrolling then
+        --     lcd.drawFilledRectangle(x - 4, y - 4, w + 8, h + 8, GREY)
+        -- else
+        --     lcd.drawFilledRectangle(x, y, w + 5, h + 4, BLUE, 10)
+        -- end
 
         lcd.drawFilledTriangle(x - 20, y - 10, x - 20, y + 10, x, y + 0, flags)
-        lcd.drawFilledRectangle(x, y - h, w, h, YELLOW)
-        lcd.drawFilledRectangle(x, y, w, h, YELLOW)
-        lcd.drawFilledRectangle(x + w - 4, y - h, 4, h, ORANGE)
+        if self.scrolling then
+            lcd.drawFilledRectangle(x, y - h, w, h*2, lcd.RGB(0xFF, 0xE5, 0x00))
+        else
+            lcd.drawFilledRectangle(x, y - h, w, h*2, YELLOW)
+        end
+        -- lcd.drawFilledRectangle(x, y, w, h, YELLOW)
+        -- lcd.drawFilledRectangle(x + w - 4, y - h, 4, h, ORANGE)
 
         local num_vals = math.floor(self.h / self.dy)
 
@@ -143,10 +131,9 @@ end
             local v1 = new_val + (i * self.val_steps)
             local y1 = y + i * self.dy
             if v1 >= self.val_min and v1 <= self.val_max then
-                log("%s. dn n_val v1=%s, steps=%s,  mod1=%s, mod2=%s", i, v1, self.val_steps, math.fmod(v1, 1), v1 % (10*self.val_steps))
                 if v1 % (10*self.val_steps) == 0 then
                     lcd.drawFilledRectangle(x, y1, 20, 2, BLACK)
-                    lcd.drawText(x + 25, y1 - 10, self.format_val(v1), FONT_SIZES.FONT_8 + BLACK)
+                    lcd.drawText(x + 25, y1 - 10, self.format_val(v1), panel.FONT_SIZES.FONT_8 + BLACK)
                 elseif v1 %(5*self.val_steps) == 0 then
                     lcd.drawFilledRectangle(x, y1, 15, 2, BLACK)
                 else
@@ -158,10 +145,9 @@ end
             local v1 = new_val + (i * self.val_steps)
             local y1 = y + i * self.dy
             if v1 >= self.val_min and v1 <= self.val_max then
-                log("%s. up  n_val v1=%s, mod1=%s, mod2=%s", i, v1, math.fmod(v1, 5*self.val_steps), math.fmod(v1, 10*self.val_steps))
                 if math.fmod(v1, 10*self.val_steps) == 0 then
                     lcd.drawFilledRectangle(x, y1, 20, 2, BLACK)
-                    lcd.drawText(x + 25, y1 - 10, self.format_val(v1), FONT_SIZES.FONT_8 + BLACK)
+                    lcd.drawText(x + 25, y1 - 10, self.format_val(v1), panel.FONT_SIZES.FONT_8 + BLACK)
                 elseif math.fmod(v1, 5*self.val_steps) == 0 then
                     lcd.drawFilledRectangle(x, y1, 15, 2, BLACK)
                 else
@@ -185,8 +171,8 @@ end
                 self.scrolling_base_y = touchState.y
                 self.scroll_offset_y = 0 -- self.scrolling_base_y - touchState.y
                 self.val_on_start_sliding = self.val
-                log("[%s] scrolling EVT_TOUCH_FIRST, val=%s, new_val=%s", self.id, self.val, self.get_value())
-                log("start scrolling y=%s", self.scrolling_base_y)
+                -- log("[%s] scrolling EVT_TOUCH_FIRST, val=%s, new_val=%s", self.id, self.val, self.get_value())
+                -- log("start scrolling y=%s", self.scrolling_base_y)
             end
 
             -- If we put a finger down on a menu item and immediately slide, then we can scroll
@@ -194,7 +180,7 @@ end
             -- lcd.drawFilledCircle(touchState.x, touchState.y, 10, GREEN, 10)
             if self.scrolling then
                 self.scroll_offset_y = self.scrolling_base_y - touchState.y
-                log("[%s] scrolling y1=%s, y2=%s, dy=%s", self.id, self.scrolling_base_y, touchState.y, self.dy)
+                -- log("[%s] scrolling y1=%s, y2=%s, dy=%s", self.id, self.scrolling_base_y, touchState.y, self.dy)
                 self.val = self.get_value()
             end
 
@@ -202,12 +188,12 @@ end
             if self.scrolling_base_y then
                 self.scroll_offset_y = self.scrolling_base_y - touchState.y
             end
-            log("[%s] scrolling EVT_TOUCH_BREAK, val=%s, new_val=%s", self.id, self.val, self.get_value())
+            -- log("[%s] scrolling EVT_TOUCH_BREAK, val=%s, new_val=%s", self.id, self.val, self.get_value())
             self.val = self.get_value()
             self.scrolling = false
             self.scrolling_base_y = nil
             self.scroll_offset_y = nil
-            log("[%s] scrolling EVT_TOUCH_BREAK, val=%s", self.id, self.val)
+            -- log("[%s] scrolling EVT_TOUCH_BREAK, val=%s", self.id, self.val)
         else
             self.scrolling = false
         end
@@ -215,7 +201,7 @@ end
         local v = self.get_value()
         if v ~= self.lastValReported then
             self.lastValReported = v
-            return self.callBack(self)
+            return self.callback(self)
         end
 
     end

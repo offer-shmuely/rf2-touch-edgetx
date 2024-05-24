@@ -13,7 +13,7 @@ function verticalSlider(panel, id, args)
         min = args.min,
         max = args.max,
         delta = args.delta,
-        callback=args.callback or panel._.doNothing,
+        callback=args.callback or panel.doNothing,
 
         SLIDER_DOT_RADIUS=10,
     }

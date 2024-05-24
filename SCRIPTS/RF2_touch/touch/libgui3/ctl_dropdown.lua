@@ -15,7 +15,7 @@ function dropDown(panel, id, args, flags)
     local items0or1 = args.items or {} -- can be 0 based table, or 1 based table
     local items1 = panel._.tableBasedX_convertTableTo1Based(items0or1) -- 1 based table
     local selected0or1 = args.selected or 1
-    local callback = args.callback or panel._.doNothing
+    local callback = args.callback or panel.doNothing
 
     local drawingMenu = false
     local showingMenu = false

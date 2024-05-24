@@ -38,7 +38,7 @@ function M.buildSpecialFields(libGUI, panel,Page,  y, runningInSimulator)
                 f.value = defaults[i]
             end
 
-            libGUI.newControl.ctl_number_as_button(panel,  "rates-"..col.."-"..row, {
+            libGUI.newControl.ctl_rf2_button_number(panel,  "rates-"..col.."-"..row, {
                 x=x+1, y=y+1, w=col_w-2, h=row_h-2,
                 min=f.min /  (f.scale or 1),
                 max=f.max /  (f.scale or 1),

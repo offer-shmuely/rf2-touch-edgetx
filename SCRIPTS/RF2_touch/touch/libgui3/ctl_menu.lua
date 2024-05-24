@@ -18,7 +18,7 @@ function menu(panel, id, args, flags)
         initiatedselected0or1 = args.selected or 1,
         selected1 = panel._.tableBasedX_convertSelectedTo1Based(args.selected or 1, args.items),
         initiatedSelected1 = panel._.tableBasedX_convertSelectedTo1Based(args.selected or 1, args.items),
-        callback = args.callback or panel._.doNothing,
+        callback = args.callback or panel.doNothing,
         flags = bit32.bor(flags or panel.flags),
 
         disabled = false,

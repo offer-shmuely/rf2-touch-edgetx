@@ -38,7 +38,7 @@ function M.buildSpecialFields(libGUI, panel,Page,  y, runningInSimulator)
                 f.value = defaults[i]
             end
 
-            libGUI.newControl.ctl_number_as_button(panel, "butnum-"..col.."-"..row, {
+            libGUI.newControl.ctl_rf2_button_number(panel, "butnum-"..col.."-"..row, {
                 x=x1+1, y=y1+1, w=col_w-2, h=row_h-2, text=nil,
                 min=f.min /  (f.scale or 1),
                 max=f.max /  (f.scale or 1),
@@ -82,7 +82,7 @@ function M.buildSpecialFields(libGUI, panel,Page,  y, runningInSimulator)
                     f.value = defaults[i]
                 end
 
-                libGUI.newControl.ctl_number_as_button(panel, "butnum-"..col.."-"..row, {
+                libGUI.newControl.ctl_rf2_button_number(panel, "butnum-"..col.."-"..row, {
                     x=x1+1, y=y1+1, w=col_w-2, h=row_h-2, text=nil,
                     steps=f.mult,
                     value=f.value,

@@ -4,7 +4,7 @@
 function button(panel, id, args, flags)
     local self = {
         text = args.text,
-        callback = args.onPress or panel._.doNothing,
+        callback = args.onPress or panel.doNothing,
         -- flags = bit32.bor(flags or panel.flags, CENTER, VCENTER),
         flags = bit32.bor(flags or panel.flags, VCENTER),
         disabled = false,
@@ -18,7 +18,7 @@ function button(panel, id, args, flags)
         w = args.w,
         h = args.h,
         bgColor = args.bgColor or panel.colors.btn.bg,
-        img = Bitmap.open("images/cf_icon_pid_white.png")
+        img = Bitmap.open("images/" .. args.img)
     }
 
     function self.draw(focused)

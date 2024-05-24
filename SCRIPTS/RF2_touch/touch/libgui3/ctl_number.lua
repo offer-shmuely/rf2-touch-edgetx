@@ -20,8 +20,8 @@ function number(panel, id, args, flags)
         units = args.units,
         bg_color = args.bg_color,
         onChangeValue = args.onChangeValue or panel._.onChangeDefault,
-        callbackOnModalActive = args.callbackOnModalActive or panel._.doNothing,
-        callbackOnModalInactive = args.callbackOnModalInactive or panel._.doNothing,
+        callbackOnModalActive = args.callbackOnModalActive or panel.doNothing,
+        callbackOnModalInactive = args.callbackOnModalInactive or panel.doNothing,
 
         modalPanel = nil,
         ctlNumberEditing = nil,

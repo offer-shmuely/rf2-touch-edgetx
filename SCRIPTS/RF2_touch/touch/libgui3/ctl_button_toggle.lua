@@ -17,7 +17,7 @@ function toggleButton(panel, id, args, flags)
         h=args.h,
         text=args.text,
         value=args.value,
-        callback=args.callback or panel._.doNothing,
+        callback=args.callback or panel.doNothing,
     }
 
     function self.draw(focused)

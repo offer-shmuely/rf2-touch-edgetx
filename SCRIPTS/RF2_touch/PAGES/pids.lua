@@ -50,7 +50,7 @@ fields[#fields + 1] = {              x = x, y = inc.y(tableSpacing.row), min = 0
 
 -- ------------------ advance ---------------------------------------------------------------------
 x = margin
-inc.y(lineSpacing*1)
+inc.y(lineSpacing*1.5)
 labels[#labels + 1] = { t = "Advance",       x = x,          y = inc.y(lineSpacing) }
 
 local y2 = y

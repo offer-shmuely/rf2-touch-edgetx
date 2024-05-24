@@ -9,7 +9,7 @@ function horizontalSlider(panel, id, args)
         min = args.min,
         max = args.max,
         delta = args.delta,
-        callback=args.callback or panel._.doNothing,
+        callback=args.callback or panel.doNothing,
 
         disabled = false,
         hidden= false,

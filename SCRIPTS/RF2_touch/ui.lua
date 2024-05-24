@@ -229,11 +229,7 @@ local function drawScreen()
         local f = Page.labels[i]
         local y = f.y - pageScrollY
         if y >= 0 and y <= LCD_H then
-            local txt = f.t
-            if f.t2 ~= nil then
-                txt = f.t2
-            end
-            lcd.drawText(f.x, y, txt, textOptions)
+            lcd.drawText(f.x, y, f.t2 or f.t, textOptions)
         end
     end
     local val = "---"

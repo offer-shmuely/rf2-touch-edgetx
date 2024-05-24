@@ -33,10 +33,10 @@ function ctl_number_editor(panel, id, args)
         editing = true,
         drawingMenu = false,
     }
-    function self.onMeasureTapeValueChange(obj) --????
-        panel.log("ctl_number_editor onMeasureTapeValueChange: %s", obj.val)
-        self.value = obj.val   --???
-    end
+    -- function self.onMeasureTapeValueChange(obj) --????
+    --     panel.log("ctl_number_editor onMeasureTapeValueChange: %s", obj.val)
+    --     self.value = obj.val   --???
+    -- end
 
     self.measureTape = nil
 
@@ -99,9 +99,9 @@ function ctl_number_editor(panel, id, args)
         -- lcd.drawText(x + w - 5, y + h_header + 2, string.format("max: \n%s", f.min), FONT_SIZES.FONT_8 + BLACK + RIGHT)
         -- lcd.drawText(x + w - 5, y + h - 45, string.format("max: \n%s", f.max), FONT_SIZES.FONT_8 + BLACK + RIGHT)
         -- lcd.drawText(x + 20, y1 + h_header + 20, string.format("%s", f.t2 or f.t), FONT_SIZES.FONT_8 + WHITE)
-        panel.drawText(x + 20, y + self.h_header + 30, string.format("min: %s", self.min), panel.FONT_SIZES.FONT_8 + WHITE)
-        panel.drawText(x + 20, y + self.h_header + 50, string.format("max: %s", self.max), panel.FONT_SIZES.FONT_8 + WHITE)
-        panel.drawText(x + 20, y + self.h_header + 70, string.format("steps: %s", self.steps), panel.FONT_SIZES.FONT_8 + WHITE)
+        panel.drawText(x+20, y + self.h_header + 30, string.format("min: %s", self.min), panel.FONT_SIZES.FONT_8 + WHITE)
+        panel.drawText(x+20, y + self.h_header + 50, string.format("max: %s", self.max), panel.FONT_SIZES.FONT_8 + WHITE)
+        panel.drawText(x+20, y + self.h_header + 70, string.format("steps: %s", self.steps), panel.FONT_SIZES.FONT_8 + WHITE)
         if self.help ~= nil and self.help ~= "" then
             panel.drawText(x + 20, y + self.h_header + 85, "Info: \n" .. self.help, panel.FONT_SIZES.FONT_8 + WHITE)
         end
@@ -122,17 +122,17 @@ function ctl_number_editor(panel, id, args)
         local percent = (f_val - f_min) / (f_max - f_min)
 
         -- local fg_col = lcd.RGB(0x00, 0xB0, 0xDC)
-        local w = 250 -- w1-30
-        local h = 8
-        local x = x + 15
-        local y = y + h - 20
-        local r = 8
-        local px = (w - 2) * percent
+        local w1 = 250 -- w1-30
+        local h1 = 8
+        local x1 = x + 15
+        local y1 = y + h - 20
+        local r1 = 8
+        local px = (w1 - 2) * percent
 
-        panel.drawFilledRectangle(x, y + 2, w, h, LIGHTGREY)
-        panel.drawFilledRectangle(x, y + 2, px, h, lcd.RGB(0x00, 0xB0, 0xDC))
+        panel.drawFilledRectangle(x1, y1 + 2, w1, h1, LIGHTGREY)
+        panel.drawFilledRectangle(x1, y1 + 2, px, h1, lcd.RGB(0x00, 0xB0, 0xDC))
         -- panel.drawFilledCircle(x + px - r/2, y + r/2, r, lcd.RGB(0x00, 0xB0, 0xDC))
-        panel.drawFilledCircle(x + px - r/2, y + r/2, r, BLUE)
+        panel.drawFilledCircle(x1 + px - r1/2, y1 + r1/2, r1, BLUE)
 
     end
 
@@ -184,7 +184,7 @@ function ctl_number_editor(panel, id, args)
             {x=360, y=self.y + self.h_header + (self.h - self.h_header) / 2,w=70,h=(self.h - self.h_header) / 2 - 5,
             start_val=self.value, min=self.min, max=self.max,
             steps=self.steps,
-            onChangeCallBack=self.onMeasureTapeValueChange
+            -- onChangeCallBack=self.onMeasureTapeValueChange
         })
 
     end

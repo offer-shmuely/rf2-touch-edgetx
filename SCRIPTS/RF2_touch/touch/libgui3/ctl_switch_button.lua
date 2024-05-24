@@ -18,7 +18,7 @@ function switch_button(panel, id, args, flags)
         h = 36,
         w= r1*4,
         value = args.value,
-        callback = args.callback or panel._.doNothing,
+        callback = args.callback or panel.doNothing,
     }
 
     function self.draw(focused)

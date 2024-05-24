@@ -298,7 +298,7 @@ function M.newPanel(id, args)
     end
 
     -- The default callBack
-    function panel._.doNothing()
+    function panel.doNothing()
     end
 
     -- The default onChangeValue
@@ -532,14 +532,12 @@ function M.newPanel(id, args)
         end
 
         -- Is there an active prompt, send onEvent to the main control of the modal panel
-        log("[%s] libgui3 - onEvent --> prompt::onEvent 1 (%s, %s)", panel.id, M.prompt, M.showingPrompt)
+        -- log("[%s] libgui3 - onEvent --> prompt::onEvent 1 (%s, %s)", panel.id, M.prompt, M.showingPrompt)
         if M.prompt and M.showingPrompt and touchState==nil then
-            log("[%s] libgui3 - onEvent --> prompt::onEvent (prompt.id: %s)2", panel.id, M.prompt.id)
+            -- log("[%s] libgui3 - onEvent --> prompt::onEvent (prompt.id: %s)2", panel.id, M.prompt.id)
             local ctl = panel._.elements[panel._.focus]
-            -- if ctl then
-                log("[%s] libgui3 panel.onEvent() ctl:%s, focus: %s <<<<<", panel.id, ctl.id, panel._.focus)
-                ctl.onEvent(event, touchState)
-            -- end
+            -- log("[%s] libgui3 panel.onEvent() ctl:%s, focus: %s <<<<<", panel.id, ctl.id, panel._.focus)
+            ctl.onEvent(event, touchState)
             return
         end
 

@@ -1,25 +1,20 @@
-local LUA_VERSION = "2.0 - 240229"
-
+local LUA_VERSION = "2.0.0-dev-touch.2"
 local app_name = "RF2_touch"
 
-local uiStatus =
-{
+local uiStatus = {
     splash   = 0,
     init     = 1,
     mainMenu = 2,
     pages    = 3,
-    confirm  = 4,
 }
 
-local pageStatus =
-{
+local pageStatus = {
     display = 1,
     editing = 2,
     saving  = 3,
 }
 
-local uiMsp =
-{
+local uiMsp = {
     reboot = 68,
     eepromWrite = 250,
 }
@@ -39,6 +34,7 @@ local killEnterBreak = 0
 local pageScrollY = 0
 local mainMenuScrollY = 0
 local PageFiles, Page, init
+local img_title_menu = Bitmap.open("images/title_menu.png")
 
 local backgroundFill = TEXT_BGCOLOR or ERASE
 local foregroundColor = LINE_COLOR or SOLID
@@ -127,16 +123,6 @@ local function eepromWrite()
     protocol.mspRead(uiMsp.eepromWrite)
 end
 
-local function confirm(page)
-    prevUiState = uiState
-    uiState = uiStatus.confirm
-    invalidatePages()
-    currentField = 1
-    Page = assert(loadScript(page))()
-    collectgarbage()
-end
-
-
 function dataBindFields()
     for i=1,#Page.fields do
         if #Page.values >= Page.minBytes then
@@ -215,17 +201,6 @@ local function requestPage()
     end
 end
 
-local function drawScreenTitle(screenTitle, uiState, panel)
-    lcd.clear()
-
-    if panel ~= nil then
-        -- panel.drawFilledRectangle(0, 0, LCD_W, LCD_H, lcd.RGB(0xE0, 0xEC, 0xF0))
-        panel.drawFilledRectangle(0, 0, LCD_W, 30, panel.colors.topbar.bg)
-        panel.drawText(10,7,screenTitle, MENU_TITLE_COLOR)
-    end
-
-end
-
 local function change_state_to_menu()
     invalidatePages()
     currentField = 1
@@ -243,15 +218,14 @@ end
 
 -- draw menu (pages)
 local function buildMainMenu()
-    local yMinLim = radio.yMinLimit
 
-    local h = 50
+    local h = 120
     -- local w = 147
-    local w = 225
-    local lineSpacing_w = 9
-    local lineSpacing_h = 9
+    local w = 80
+    local lineSpacing_w = 15
+    local lineSpacing_h = 10
     local maxLines = 4
-    local maxCol = 2
+    local maxCol = 5
     local col = 0
 
     libGUI.newControl.ctl_title(panelMainMenu, nil, {
@@ -265,21 +239,24 @@ local function buildMainMenu()
         local y = 40 + line * (h + lineSpacing_h)
         local x = 10 + (i - (line*maxCol) -1)*(w+lineSpacing_w)
 
-        local bg = nil -- i.e. default
+        -- local bg = nil -- i.e. default
+        local bg = lcd.RGB(0x22,0x22,0x22)
         if false then
             bg = panelMainMenu.colors.active
         end
 
-        libGUI.newControl.ctl_button_image(panelMainMenu, nil,
-            {x = x, y = y, w = w, h = h, text = PageFiles[i].title,
+        libGUI.newControl.ctl_rf2_button_menu(panelMainMenu, nil,
+            {x = x, y = y, w = w, h = h, text = PageFiles[i].t2,
             bgColor=bg,
+            img=PageFiles[i].img,
+            title_txt=PageFiles[i].per_profile and "Profile" or nil, -- add profile number
             onPress=function()
                 currentPage = i
                 currentPageName = PageFiles[i].title
                 change_state_to_pages()
             end
         })
-        log("mainMenuBuild: i=%s, col=%s, y=%s", i, col, y)
+        log("mainMenuBuild: i=%s, col=%s, x=%s, y=%s, w=%s, h=%s", i, col, x, y, w, h)
     end
 
 end
@@ -493,7 +470,7 @@ local function buildFieldsPage()
             end
 
             log("number_as_button: i=%s, txt=%s, min:%s,max:%s,scale:%s, mult:%s, steps=%s", i, txt, f.min, f.max, f.scale, f.mult, f.scale, f.mult, (1/(f.scale or 1))*(f.mult or 1))
-            libGUI.newControl.ctl_number_as_button(panelFieldsPage, txt, {
+            libGUI.newControl.ctl_rf2_button_number(panelFieldsPage, txt, {
                 x=x_Temp, y=y, w=150, h=h_btn,
                 min=f.min/(f.scale or 1),
                 max=f.max/(f.scale or 1),
@@ -541,12 +518,18 @@ local function updateNeedToSaveFlag()
         -- log("updateNeedToSaveFlag: %s (%s) %s (%s)", i, ctl, ctl.text, ctl.id)
         if ctl.isDirty then
             -- log("updateNeedToSaveFlag: x=%s,y=%s txt=%s, is_dirty:%s", ctl.x, ctl.y, ctl.text, ctl.isDirty())
-            tempNeedToSave = tempNeedToSave or ctl.isDirty()
+            local tempNeedToSave = ctl.isDirty()
+            if tempNeedToSave then
+                isFiledsNeedToSave = tempNeedToSave
+                btnSave.disabled = not isFiledsNeedToSave
+                btnReload.disabled = false -- not isFiledsNeedToSave
+                return
+            end
         end
     end
-    isFiledsNeedToSave = tempNeedToSave
-    btnSave.disabled = not isFiledsNeedToSave
-    btnReload.disabled = not isFiledsNeedToSave
+    isFiledsNeedToSave = false
+    btnSave.disabled = true
+    btnReload.disabled = false -- not isFiledsNeedToSave
 
     -- log("updateNeedToSaveFlag: ---isFiledsNeedToSave=%s---", isFiledsNeedToSave)
 end
@@ -576,7 +559,6 @@ end
 local function run_ui_init(event, touchState)
     img_bg1 = nil
     lcd.clear()
-    -- drawScreenTitle("Rotorflight "..LUA_VERSION, uiState)
     lcd.drawFilledRectangle(0, 0, LCD_W, 30, COLOR_THEME_SECONDARY1)--lcd.RGB(0xE0, 0xEC, 0xF0))
     lcd.drawText(10,5,"Rotorflight "..LUA_VERSION, MENU_TITLE_COLOR)
 
@@ -600,6 +582,9 @@ end
 
 local function run_ui_menu(event, touchState)
     lcd.clear()
+    lcd.drawFilledRectangle(0, 0, LCD_W, LCD_H, lcd.RGB(0x11, 0x11, 0x11))
+    -- lcd.drawBitmap(img_title_menu, 0, 0, 100)
+
 
     if libGUI.isNoPrompt() then
         panelMainMenu.draw()
@@ -613,17 +598,6 @@ end
 
 local function run_ui_pages(event, touchState)
     lcd.clear()
-
-    -- if pageState == pageStatus.saving then
-    --     if getTime() > saveTS + saveTimeout then
-    --         if saveRetries < saveMaxRetries then
-    --             saveSettings()
-    --         else
-    --             pageState = pageStatus.display
-    --             invalidatePages()
-    --         end
-    --     end
-    -- end
 
     if not Page then
         Page = assert(loadScript("PAGES/"..PageFiles[currentPage].script))()
@@ -686,18 +660,6 @@ local function run_ui(event, touchState)
 
         run_ui_pages(event, touchState)
 
-
-    -- elseif uiState == uiStatus.confirm then
-    --     drawScreenFields()
-    --     if event == EVT_VIRTUAL_ENTER then
-    --         uiState = uiStatus.init
-    --         init = Page.init
-    --         invalidatePages()
-    --     elseif event == EVT_VIRTUAL_EXIT then
-    --         invalidatePages()
-    --         uiState = prevUiState
-    --         prevUiState = nil
-    --     end
     end
 
     if modalWatingPanel then

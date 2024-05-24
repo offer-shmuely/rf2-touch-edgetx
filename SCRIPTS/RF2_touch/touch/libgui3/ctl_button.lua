@@ -16,7 +16,7 @@ function button(panel, id, args, flags)
         w = args.w,
         h = args.h,
         bgColor = args.bgColor or panel.colors.btn.bg,
-        callback = args.onPress or panel._.doNothing,
+        callback = args.onPress or panel.doNothing,
     }
 
     function self.draw(focused)
