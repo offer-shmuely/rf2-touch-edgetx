@@ -302,7 +302,8 @@ local function updateValueChange(fieldId, newVal)
     local f = Page.fields[fieldId]
     local scale = f.scale or 1
     local mult = f.mult or 1
-    f.value = clipValue(newVal/scale, (f.min or 0)/scale, (f.max or 255)/scale)
+    -- f.value = clipValue(newVal/scale, (f.min or 0)/scale, (f.max or 255)/scale)
+    f.value = clipValue(newVal, (f.min or 0), (f.max or 255))
     f.value = math.floor(f.value*scale/mult + 0.5)*mult/scale
 
     if runningInSimulator then
@@ -469,7 +470,7 @@ local function buildFieldsPage()
                 units = ctl_fieldsInfo[f.id].units or ""
             end
 
-            log("number_as_button: i=%s, txt=%s, min:%s,max:%s,scale:%s, mult:%s, steps=%s", i, txt, f.min, f.max, f.scale, f.mult, f.scale, f.mult, (1/(f.scale or 1))*(f.mult or 1))
+            log("number_as_button: i=%s, txt=%s, min:%s,max:%s,scale:%s, mult:%s, steps=%s, raw-val: %s", i, txt, f.min, f.max, f.scale, f.mult, (1/(f.scale or 1))*(f.mult or 1), f.value)
             libGUI.newControl.ctl_rf2_button_number(panelFieldsPage, txt, {
                 x=x_Temp, y=y, w=150, h=h_btn,
                 min=f.min/(f.scale or 1),
