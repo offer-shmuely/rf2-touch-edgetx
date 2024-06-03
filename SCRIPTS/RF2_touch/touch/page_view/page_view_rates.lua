@@ -5,7 +5,7 @@ local M = {}
 -- local function simFillValues()
 -- end
 
-function M.buildSpecialFields(libGUI, panel,Page,  y, runningInSimulator)
+function M.buildSpecialFields(libGUI, panel,Page,  y, runningInSimulator, updateValueChange)
     local num_col = 3
     local row_h = 35
     local col1_w = 160
@@ -45,7 +45,11 @@ function M.buildSpecialFields(libGUI, panel,Page,  y, runningInSimulator)
                 steps=(1/(f.scale or 1))*(f.mult or 1),
                 value=f.value,
                 units="",
-                text=nil, help=nil,
+                text=nil,
+                help=nil,
+                onValueUpdated=function(ctl, newVal)
+                    updateValueChange(i, newVal)
+                end
             })
         end
     end

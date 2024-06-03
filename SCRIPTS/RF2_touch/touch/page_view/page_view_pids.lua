@@ -2,7 +2,7 @@ local app_name, script_dir = ...
 
 local M = {}
 
-function M.buildSpecialFields(libGUI, panel,Page,  y, runningInSimulator)
+function M.buildSpecialFields(libGUI, panel,Page,  y, runningInSimulator, updateValueChange)
     local num_col = 4
     local row_h = 35
     local col1_w = 120
@@ -38,14 +38,18 @@ function M.buildSpecialFields(libGUI, panel,Page,  y, runningInSimulator)
                 f.value = defaults[i]
             end
 
-            libGUI.newControl.ctl_rf2_button_number(panel, "butnum-"..col.."-"..row, {
-                x=x1+1, y=y1+1, w=col_w-2, h=row_h-2, text=nil,
+            libGUI.newControl.ctl_rf2_button_number(panel, "butnum-pid"..col.."-"..row, {
+                x=x1+1, y=y1+1, w=col_w-2, h=row_h-2,
                 min=f.min /  (f.scale or 1),
                 max=f.max /  (f.scale or 1),
                 steps=(1/(f.scale or 1))*(f.mult or 1),
                 value=f.value,
                 units="",
-
+                text=nil,
+                help=nil,
+                onValueUpdated=function(ctl, newVal)
+                    updateValueChange(i, newVal)
+                end
             })
 
             last_y = y1
@@ -82,16 +86,20 @@ function M.buildSpecialFields(libGUI, panel,Page,  y, runningInSimulator)
                     f.value = defaults[i]
                 end
 
-                libGUI.newControl.ctl_rf2_button_number(panel, "butnum-"..col.."-"..row, {
-                    x=x1+1, y=y1+1, w=col_w-2, h=row_h-2, text=nil,
+                libGUI.newControl.ctl_rf2_button_number(panel, "butnum-adv"..col.."-"..row, {
+                    x=x1+1, y=y1+1, w=col_w-2, h=row_h-2,
                     steps=f.mult,
                     value=f.value,
                     min=f.min /  (f.scale or 1),
                     max=f.max /  (f.scale or 1),
                     scale=(f.scale or 1),
                     units="",
+                    text=nil,
+                    help=nil,
+                        onValueUpdated=function(ctl, newVal)
+                        updateValueChange(i, newVal)
+                    end
                 })
-
             end
         end
     end

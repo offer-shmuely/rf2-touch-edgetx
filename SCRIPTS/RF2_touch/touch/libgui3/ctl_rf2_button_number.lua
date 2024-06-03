@@ -94,6 +94,8 @@ function ctl_rf2_button_number(panel, id, args, flags)
 
     function self.start_number_editor()
         panel.log("[%s] number_as_button::start_number_editor(%s) v:%s,min:%s,max:%s", self.id, self.value, self.text, self.min, self.max)
+        panel.log("[%s] number_as_button::66, f(%s)", self.id, args.aaa)
+
         self.modalPanel = panel.newPanel("modal-fancy-editor")
         self.ctlNumberEditing = self.modalPanel.newControl.ctl_number_editor(self.modalPanel, "numEditor1", {
             steps=self.steps,
@@ -110,7 +112,6 @@ function ctl_rf2_button_number(panel, id, args, flags)
                     self.callbackOnModalInactive(self)
                 end,
                 onDone=function(newVal)
-                    panel.log("[%s] number_as_button::onDoneCallback(%s)", self.id, self.value)
                     self.value = newVal
                     self.showingEditor = false
                     self.ctlNumberEditing = nil
@@ -121,6 +122,7 @@ function ctl_rf2_button_number(panel, id, args, flags)
                 end,
 
         })
+        self.modalPanel.editing = true
         self.showingEditor = true
         panel.showPrompt(self.modalPanel) --???
 

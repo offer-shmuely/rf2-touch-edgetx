@@ -1,4 +1,4 @@
-local LUA_VERSION = "2.0.0-dev.2"
+local LUA_VERSION = "2.0.0-dev.3"
 local app_name = "RF2_touch"
 
 local uiStatus = {
@@ -299,6 +299,7 @@ local function clipValue(val,min,max)
 end
 
 local function updateValueChange(fieldId, newVal)
+    log("number_as_button: updateValueChange(i=%s, newVal=%s)", fieldId, newVal)
     local f = Page.fields[fieldId]
     local scale = f.scale or 1
     local mult = f.mult or 1
@@ -387,7 +388,7 @@ local function buildFieldsPage()
     if vChunk then
         log("found: %s", viewFileName)
         local rateTouchView = vChunk(libgui_dir)
-        firstRegularField,last_y = rateTouchView.buildSpecialFields(libGUI, panelFieldsPage, Page, y, runningInSimulator)
+        firstRegularField,last_y = rateTouchView.buildSpecialFields(libGUI, panelFieldsPage, Page, y, runningInSimulator, updateValueChange)
     end
 
     -- genric display for all pages
