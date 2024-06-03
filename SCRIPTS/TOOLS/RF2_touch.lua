@@ -1,4 +1,4 @@
-local toolName = "TNS|_Rotorflight 2 touch v0.1|TNE"
+local toolName = "TNS|Rotorflight touch v0.3|TNE"
 chdir("/SCRIPTS/RF2_touch")
 
 --local app_ver = "0.1.0"
