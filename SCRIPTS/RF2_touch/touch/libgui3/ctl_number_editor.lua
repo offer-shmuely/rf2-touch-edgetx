@@ -15,6 +15,7 @@ function ctl_number_editor(panel, id, args)
         value = args.value or -1,
         min = args.min or 0,
         max = args.max or 100,
+        units = args.units or "",
         steps = args.steps or 1,
         text = args.text or "",
         help = args.help or "",
@@ -48,6 +49,52 @@ function ctl_number_editor(panel, id, args)
     function self.set_value(v)
         return self.measureTape.set_value(v)
     end
+
+    function self.split_into_lines(str, max_chars, large_line_no, max_chars2)
+        if str == nil or str == "" then
+            return {""}
+        end
+
+        panel.log("ctl_number_editor::split_into_lines(%s, %s)", str, max_chars)
+
+        local words = {}
+        for word in string.gmatch(str, "%S+") do
+            table.insert(words, word)
+            panel.log("ctl_number_editor::found word: %s", word)
+        end
+
+        panel.log("ctl_number_editor::lines...")
+        local lines = {""}
+        for i, word in ipairs(words) do
+            if #lines == large_line_no then
+                max_chars = max_chars2
+            end
+
+            if #lines[#lines] + #word <= max_chars then
+                if #lines[#lines] > 0 then
+                    lines[#lines] = lines[#lines] .. " " .. word
+                else
+                    lines[#lines] = word
+                end
+            else
+                panel.log("ctl_number_editor::line: %s", lines[#lines])
+                table.insert(lines, word)
+            end
+        end
+
+        return lines
+    end
+
+    -- calculate help lines
+    self.font_size = panel.FONT_SIZES.FONT_8
+    self.font_space = 18
+    self.help_lines = self.split_into_lines(self.help, 20, 5, 40)
+    if #self.help_lines > 7 then
+        self.help_lines = self.split_into_lines(self.help, 25, 6, 50)
+        self.font_size = panel.FONT_SIZES.FONT_6
+        self.font_space = 15
+    end
+
 
     function self.covers(tsx, tsy)
         panel.log("ctl_number_editor::covers() ?")
@@ -84,38 +131,50 @@ function ctl_number_editor(panel, id, args)
         local x,y,w,h,f = self.x, self.y, self.w,self.h,self.f
         local f_val = self.measureTape.val or 77
 
-        panel.drawFilledRectangle(0, 30, LCD_W, LCD_H - self.h_header, LIGHTGREY, 6) -- obfuscate main page
-        panel.drawFilledRectangle(x, y, w, h, GREY, 2)                           -- edit window bkg
-        panel.drawFilledRectangle(x, y, w, self.h_header, BLACK, 2)               -- header
-        panel.drawRectangle(x + 5, y + 2, 10, 10, WHITE, 0)                        -- x exit symbol
+        panel.drawFilledRectangle(0, 30, LCD_W, LCD_H - self.h_header, LIGHTGREY, 6)   -- obfuscate main page
+        -- panel.drawFilledRectangle(x, y, w, h, GREY, 2)                              -- edit window bkg
+        panel.drawFilledRectangle(x, y, w, h, lcd.RGB(0x22,0x22,0x22), 1)              -- edit window bkg
+        --panel.drawFilledRectangle(x, y, w, self.h_header, BLACK, 2)                  -- header
+        panel.drawRectangle(x + 5, y + 2, 10, 10, WHITE, 0)                            -- x exit symbol
         panel.drawText(x + w - 20, y + 5, "x", panel.FONT_SIZES.FONT_8 + BOLD + WHITE)
-        panel.drawRectangle(x, y, w, h, GREY, 0)                                 -- border
+        panel.drawRectangle(x, y, w, h, GREY, 0)                                     -- border
         -- lcd.drawText(x + 5, y + h_header, field_name, FONT_SIZES.FONT_12 + BOLD + CUSTOM_COLOR)
 
         -- title
-        panel.drawText((x + w) / 2, y + 5, self.text, panel.FONT_SIZES.FONT_8 + BOLD + WHITE + CENTER)
+        -- panel.drawText((x + w) / 2, y + 5, self.text, panel.FONT_SIZES.FONT_8 + BOLD + WHITE + CENTER)
+        panel.drawText(x +12 , y +10, self.text, panel.FONT_SIZES.FONT_8 + BOLD + WHITE)
+        panel.drawFilledRectangle(x+10, y+30, 260, 1, WHITE, 12)              -- separation line
 
-        -- additional info
+        -- help text
         -- lcd.drawText(x + w - 5, y + h_header + 2, string.format("max: \n%s", f.min), FONT_SIZES.FONT_8 + BLACK + RIGHT)
         -- lcd.drawText(x + w - 5, y + h - 45, string.format("max: \n%s", f.max), FONT_SIZES.FONT_8 + BLACK + RIGHT)
         -- lcd.drawText(x + 20, y1 + h_header + 20, string.format("%s", f.t2 or f.t), FONT_SIZES.FONT_8 + WHITE)
-        panel.drawText(x+20, y + self.h_header + 30, string.format("min: %s", self.min), panel.FONT_SIZES.FONT_8 + WHITE)
-        panel.drawText(x+20, y + self.h_header + 50, string.format("max: %s", self.max), panel.FONT_SIZES.FONT_8 + WHITE)
-        panel.drawText(x+20, y + self.h_header + 70, string.format("steps: %s", self.steps), panel.FONT_SIZES.FONT_8 + WHITE)
+        -- panel.drawText(x+20, y + self.h_header + 70, string.format("steps: %s", self.steps), panel.FONT_SIZES.FONT_8 + WHITE)
         if self.help ~= nil and self.help ~= "" then
-            panel.drawText(x + 20, y + self.h_header + 85, "Info: \n" .. self.help, panel.FONT_SIZES.FONT_8 + WHITE)
+            --panel.drawText(x + 10, y + self.h_header + 5, self.help, panel.FONT_SIZES.FONT_8 + WHITE)
+            -- local font_size = panel.FONT_SIZES.FONT_8
+            -- local font_space = 18
+            -- if #self.help_lines > 7 then
+            --     font_size = panel.FONT_SIZES.FONT_6
+            --     local font_space = 13
+            -- end
+
+            for i, line in ipairs(self.help_lines) do
+                panel.drawText(x + 10, y + self.h_header +5 + (i-1)*self.font_space, line, self.font_size + WHITE)
+            end
         end
 
         -- value
         local val_txt = self.measureTape.format_val(f_val)
-        local units_txt = self.units or ""
-        lcd.drawText((x + w) / 2 + 80, y + 30, val_txt, panel.FONT_SIZES.FONT_16 + BOLD + BLUE + RIGHT)
-        panel.drawText((x + w) / 2 + 85, y + 60, units_txt, panel.FONT_SIZES.FONT_12 + BOLD + BLUE)
+        panel.drawText((x + w) / 2 + 80, y + 30, val_txt, panel.FONT_SIZES.FONT_16 + BOLD + BLUE + RIGHT)
+        panel.drawText((x + w) / 2 + 85, y + 60, self.units, panel.FONT_SIZES.FONT_12 + BOLD + BLUE)
         if self.val_org ~= f_val then
-            lcd.drawText((x + w) / 2 + 80, y + 60 + 35, string.format("current: %s %s", self.val_org, units_txt), panel.FONT_SIZES.FONT_8 + WHITE + RIGHT)
+            panel.drawText((x + w) / 2 + 80, y + 60 + 35, string.format("current: %s %s", self.val_org, units_txt), panel.FONT_SIZES.FONT_8 + WHITE + RIGHT)
         end
 
         -- progress bar
+        panel.drawText(x+20,  y +  h -40, string.format("min: %s", self.min), panel.FONT_SIZES.FONT_6 + WHITE)
+        panel.drawText(x+200, y +  h -40, string.format("max: %s", self.max), panel.FONT_SIZES.FONT_6 + WHITE)
         f_val = tonumber(f_val)
         local f_min = self.min
         local f_max = self.max

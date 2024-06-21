@@ -66,7 +66,7 @@ local scripts = {
     "/SCRIPTS/RF2_touch/api_version.lua",
     "/SCRIPTS/RF2_touch/acc_cal.lua",
     "/SCRIPTS/RF2_touch/adj_teller.lua",
-    "/SCRIPTS/FUNCTIONS/rf2bg.lua",
-    "/SCRIPTS/TOOLS/rf2.lua",
+    "/SCRIPTS/RF2_touch/main.lua",
+    "/SCRIPTS/TOOLS/RF2_touch.lua",
 }
 return scripts[...]

@@ -1,4 +1,4 @@
-local LUA_VERSION = "2.0.0-dev.3"
+local LUA_VERSION = ...
 local app_name = "RF2_touch"
 
 local uiStatus = {

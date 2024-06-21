@@ -102,6 +102,7 @@ function ctl_rf2_button_number(panel, id, args, flags)
             value=self.value,min=self.min,max=self.max,
             initiatedValue=self.initiatedValue,
             text=self.text_long or self.text,
+            units=self.units,
             help=self.help,
                 onCancel=function()
                     panel.log("[%s] number_as_button::onCancelCallback(%s)", self.id, self.value)
